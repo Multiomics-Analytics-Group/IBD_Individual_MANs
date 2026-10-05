@@ -12,10 +12,9 @@ from torch_geometric.utils import add_self_loops
 _start = Path(__file__).resolve() if "__file__" in globals() else Path.cwd()
 _root = next(p for p in (_start, *_start.parents) if (p / "code" / "common" / "paths.py").exists())
 sys.path.insert(0, str(_root / "code" / "common"))
-sys.path.insert(0, str(_root / "code" / "03_machine_learning"))  # local modules of this stage
 import paths
 
-# Loading custom functions from helper_functions.py
+# Loading custom functions from code/common/helper_functions.py
 import helper_functions as hf
 
 PROCESSED_DATA_PATH = paths.DATA_ABUNDANCE

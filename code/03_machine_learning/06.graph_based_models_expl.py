@@ -22,8 +22,8 @@ REPRODUCIBLE_SEED = args.seed
 _start = Path(__file__).resolve() if "__file__" in globals() else Path.cwd()
 _root = next(p for p in (_start, *_start.parents) if (p / "code" / "common" / "paths.py").exists())
 sys.path.insert(0, str(_root / "code" / "common"))
-sys.path.insert(0, str(_root / "code" / "03_machine_learning"))  # local modules of this stage
 import paths
+import helper_functions  # noqa: F401  (defines GraphDictDataset, needed by torch.load to read the saved datasets)
 
 # Custom imports
 from graph_model_functions import train_model2, set_seed
