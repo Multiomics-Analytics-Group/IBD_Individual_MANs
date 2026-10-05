@@ -20,10 +20,10 @@ DATA_FUNCTIONAL_ATTR <- file.path(PROJECT_ROOT, "data", "processed", "functional
 DATA_PYG             <- file.path(PROJECT_ROOT, "data", "processed", "pyg_datasets")                      # PyG datasets, CLR/taxonomy tables and thresholded GML
 
 # --- Results: models -----------------------------------------------------------
-RES_TRAD_PICKLES     <- file.path(PROJECT_ROOT, "results", "models", "traditional", "pickles")  # raw output of 03.traditional_models.py
-RES_TRAD_TABLES      <- file.path(PROJECT_ROOT, "results", "models", "traditional", "tables")   # tidy CSVs made by 05.convert_pickles_to_csv.py
-RES_GNN_PICKLES      <- file.path(PROJECT_ROOT, "results", "models", "gnn", "pickles")          # raw output of 04.graph_based_models.py
-RES_GNN_TABLES       <- file.path(PROJECT_ROOT, "results", "models", "gnn", "tables")           # tidy CSVs made by 05.convert_pickles_to_csv.py
+RES_TRAD_PICKLES     <- file.path(PROJECT_ROOT, "results", "models", "traditional", "pickles")  # raw output of 03_train_traditional_models.py
+RES_TRAD_TABLES      <- file.path(PROJECT_ROOT, "results", "models", "traditional", "tables")   # tidy CSVs made by 05_export_model_results_csv.py
+RES_GNN_PICKLES      <- file.path(PROJECT_ROOT, "results", "models", "gnn", "pickles")          # raw output of 04_train_gnn_models.py
+RES_GNN_TABLES       <- file.path(PROJECT_ROOT, "results", "models", "gnn", "tables")           # tidy CSVs made by 05_export_model_results_csv.py
 
 # --- Results: interpretation (integrated gradients) ----------------------------
 RES_INTERP_SEEDS     <- file.path(PROJECT_ROOT, "results", "interpretation", "per_seed")  # seed_*/ folders of integrated-gradients attributions
@@ -31,9 +31,7 @@ RES_INTERP_AGG       <- file.path(PROJECT_ROOT, "results", "interpretation")    
 RES_INTERP_TABLES    <- file.path(PROJECT_ROOT, "results", "interpretation", "tables")    # module membership, top-20 features
 
 # --- Results: ablation ---------------------------------------------------------
-RES_ABLATION_GNN     <- file.path(PROJECT_ROOT, "results", "ablation", "gnn")               # cross_evaluation_*.csv, e_coli_graph_metrics.csv
-RES_ABLATION_NETFEAT <- file.path(PROJECT_ROOT, "results", "ablation", "network_features")  # per-subject network features used by the RF ablation
-RES_ABLATION_RF      <- file.path(PROJECT_ROOT, "results", "ablation", "rf")                # output folder of 03_RF_ablation.py
+RES_ABLATION_GNN     <- file.path(PROJECT_ROOT, "results", "ablation", "gnn")               # cross_evaluation_*_modules.csv (GNN module ablation)
 
 # --- Figures (one folder per producing script) ---------------------------------
 FIG_DIVERSITY        <- file.path(PROJECT_ROOT, "results", "figures", "diversity")

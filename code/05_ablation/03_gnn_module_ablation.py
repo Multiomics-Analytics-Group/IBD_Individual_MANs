@@ -420,9 +420,10 @@ def main():
     raw_output_path = paths.RES_ABLATION_GNN / "cross_evaluation_raw_metrics_per_run_modules.csv"
     preds_output_path = paths.RES_ABLATION_GNN / "cross_evaluation_predictions_modules.csv"
 
-    # results_df.to_csv(output_path, index=False)
-    # raw_results_df.to_csv(raw_output_path, index=False)
-    # final_predictions_df.to_csv(preds_output_path, index=False)
+    paths.RES_ABLATION_GNN.mkdir(parents=True, exist_ok=True)
+    results_df.to_csv(output_path, index=False)
+    raw_results_df.to_csv(raw_output_path, index=False)
+    final_predictions_df.to_csv(preds_output_path, index=False)
 
     print("\n" + "=" * 80)
     print("EXPERIMENT COMPLETE: FULL PERFORMANCE SUMMARY TABLE (MODULE COMBINATIONS)")

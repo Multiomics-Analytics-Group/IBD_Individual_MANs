@@ -3,7 +3,7 @@
 source(file.path(.root, "code", "common", "paths.R"))
 
 library(tidyverse)
-source(file.path(PROJECT_ROOT, "code", "02_networks", "00.modified_sparCC.R"))
+source(file.path(PROJECT_ROOT, "code", "common", "sparcc_functions.R"))
 
 # Load previously filtered IBD data
 #------------------------------------------------------------------
@@ -76,7 +76,7 @@ Hall_metadata_per_subject <- map(Hall_composite_per_subject, ~ .x %>%
 
 # Infer SparCC networks per subject
 #------------------------------------------------------------------
-# Use modified SparCC function from code/02_networks/00.modified_sparCC.R (it includes a detrending step in the CLR space)
+# Use modified SparCC function from code/common/sparcc_functions.R (it includes a detrending step in the CLR space)
 asso_thresholds <- seq(0, 0.9, by = 0.1) # thresholds for filtering associations to create adjacency matrices
 
 # Infer SparCC networks and association matrices for HMP (discovery cohort)

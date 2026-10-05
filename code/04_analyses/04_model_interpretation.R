@@ -16,6 +16,10 @@ library(circlize)
 library(pals)
 library(patchwork)
 
+# When run with Rscript, send printed plots to a Cairo device: the default pdf device
+# cannot render the fonts of the network plot ("invalid font type").
+if (!interactive()) options(device = function(...) grDevices::cairo_pdf("Rplots.pdf", onefile = TRUE))
+
 # Load data
 # ------------------------------------------------------------------------------
 IBD_composite <- readRDS(file.path(DATA_ABUNDANCE, "IBD_studies_counts_filtered_composite.rds"))
@@ -1184,7 +1188,8 @@ node_taxa_facets <- node_taxa_facets %>%
 node_membership_table <- node_taxa_facets %>%
   distinct(species_name, module)
 
-# write_csv(node_membership_table, file.path(RES_INTERP_TABLES, "node_module_membership_table.csv"))
+dir.create(RES_INTERP_TABLES, recursive = TRUE, showWarnings = FALSE)
+write_csv(node_membership_table, file.path(RES_INTERP_TABLES, "node_module_membership_table.csv"))
 
 # Render Faceted Metagraphs using identity color scale
 taxa_facets_plot <- ggplot() +
