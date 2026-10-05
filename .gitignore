@@ -1,0 +1,28 @@
+# Data and results live outside the repository (see README: Data availability)
+/data
+/results
+/results_baseline
+/paper
+/paper_figs
+/paper_tables
+/temp_trash
+
+# Large / binary artefacts
+*.pt
+*.pkl
+*.rds
+*.zip
+
+# Python
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# R
+.Rhistory
+.RData
+.Rproj.user/
+
+# OS / editors
+.DS_Store
+.vscode/
