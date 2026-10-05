@@ -28,7 +28,7 @@ cran <- c(
 bioconductor <- c(
   ComplexHeatmap         = "2.28.0",
   SpiecEasi              = "2.0.0",
-  curatedMetagenomicData = NA  # only needed by code/01_datasets/01_download_cmd_datasets.R; version not recorded
+  curatedMetagenomicData =  "3.14.0"
 )
 
 missing_cran <- setdiff(names(cran), rownames(installed.packages()))
