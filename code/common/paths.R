@@ -10,38 +10,36 @@ PROJECT_ROOT <- local({
   root
 })
 
-# --- Data ---------------------------------------------------------------------
-DATA_RAW             <- file.path(PROJECT_ROOT, "data", "raw", "IBD_CuratedMetagenomicData")        # counts/metadata as downloaded
-DATA_EXTERNAL        <- file.path(PROJECT_ROOT, "data", "external")                                 # third-party files (FUGAsseM, HMP2 metadata, dysbiosis scores)
-DATA_ABUNDANCE       <- file.path(PROJECT_ROOT, "data", "processed", "IBD_CuratedMetagenomicData")  # filtered abundance tables
-DATA_ASSOC_MATRICES  <- file.path(DATA_ABUNDANCE, "subject_networks", "timepoints")                 # per-subject SparCC association matrices
-DATA_NETWORKS_GML    <- file.path(DATA_ABUNDANCE, "subject_networks", "gml", "timepoints")          # unthresholded networks: HMP/, Hall/
-DATA_FUNCTIONAL_ATTR <- file.path(PROJECT_ROOT, "data", "external", "functional_attributes")        # GO-term node features: HMP/
-DATA_PYG             <- file.path(PROJECT_ROOT, "data", "processed", "pyg_datasets")                # PyG datasets and thresholded GML
+# --- Data ----------------------------------------------------------------------
+DATA_RAW             <- file.path(PROJECT_ROOT, "data", "raw", "curatedMetagenomicData")                  # counts/metadata as downloaded from curatedMetagenomicData
+DATA_EXTERNAL        <- file.path(PROJECT_ROOT, "data", "external")                                       # third-party files (FUGAsseM, HMP2 metadata, dysbiosis scores)
+DATA_ABUNDANCE       <- file.path(PROJECT_ROOT, "data", "processed", "abundance")                         # filtered abundance tables (.rds, .csv)
+DATA_ASSOC_MATRICES  <- file.path(PROJECT_ROOT, "data", "processed", "networks", "association_matrices")  # per-subject SparCC association matrices
+DATA_NETWORKS_GML    <- file.path(PROJECT_ROOT, "data", "processed", "networks", "gml")                   # unthresholded per-subject networks: HMP/, Hall/
+DATA_FUNCTIONAL_ATTR <- file.path(PROJECT_ROOT, "data", "processed", "functional_attributes")             # GO-term node features: HMP/
+DATA_PYG             <- file.path(PROJECT_ROOT, "data", "processed", "pyg_datasets")                      # PyG datasets, CLR/taxonomy tables and thresholded GML
 
-# --- Results: models ----------------------------------------------------------
-RES_TRAD_PICKLES <- file.path(PROJECT_ROOT, "results", "machine_learning", "traditional_models")
-RES_TRAD_TABLES  <- file.path(RES_TRAD_PICKLES, "converted_pickles")
-RES_GNN_PICKLES  <- file.path(PROJECT_ROOT, "results", "machine_learning", "graph_based_models",
-                              "HMP_w_functions_onehot_graphtypes", "timepoints_self")
-RES_GNN_TABLES   <- file.path(RES_GNN_PICKLES, "converted_pickles")
+# --- Results: models -----------------------------------------------------------
+RES_TRAD_PICKLES     <- file.path(PROJECT_ROOT, "results", "models", "traditional", "pickles")  # raw output of 03.traditional_models.py
+RES_TRAD_TABLES      <- file.path(PROJECT_ROOT, "results", "models", "traditional", "tables")   # tidy CSVs made by 05.convert_pickles_to_csv.py
+RES_GNN_PICKLES      <- file.path(PROJECT_ROOT, "results", "models", "gnn", "pickles")          # raw output of 04.graph_based_models.py
+RES_GNN_TABLES       <- file.path(PROJECT_ROOT, "results", "models", "gnn", "tables")           # tidy CSVs made by 05.convert_pickles_to_csv.py
 
-# --- Results: interpretation (integrated gradients) ---------------------------
-RES_INTERP_SEEDS  <- file.path(PROJECT_ROOT, "results", "machine_learning", "graph_based_models",
-                               "model_interpretation", "HMP_timepoints_self_t_0_3", "interpretation_10_seeds")  # seed_*/ folders
-RES_INTERP_AGG    <- RES_INTERP_SEEDS                                                                # all_seeds_*.csv
-RES_INTERP_TABLES <- file.path(PROJECT_ROOT, "results", "tables", "analyses", "attributions")        # modules, top-20 features
+# --- Results: interpretation (integrated gradients) ----------------------------
+RES_INTERP_SEEDS     <- file.path(PROJECT_ROOT, "results", "interpretation", "per_seed")  # seed_*/ folders of integrated-gradients attributions
+RES_INTERP_AGG       <- file.path(PROJECT_ROOT, "results", "interpretation")              # all_seeds_*.csv aggregated over seeds
+RES_INTERP_TABLES    <- file.path(PROJECT_ROOT, "results", "interpretation", "tables")    # module membership, top-20 features
 
-# --- Results: ablation --------------------------------------------------------
-RES_ABLATION_GNN     <- PROJECT_ROOT                                                                 # cross_evaluation_*.csv, e_coli_graph_metrics.csv
-RES_ABLATION_NETFEAT <- file.path(PROJECT_ROOT, "results", "tables", "analyses", "attributions")     # per-subject network features
-RES_ABLATION_RF      <- file.path(PROJECT_ROOT, "results", "machine_learning", "gnn_top20_graphnodes")
+# --- Results: ablation ---------------------------------------------------------
+RES_ABLATION_GNN     <- file.path(PROJECT_ROOT, "results", "ablation", "gnn")               # cross_evaluation_*.csv, e_coli_graph_metrics.csv
+RES_ABLATION_NETFEAT <- file.path(PROJECT_ROOT, "results", "ablation", "network_features")  # per-subject network features used by the RF ablation
+RES_ABLATION_RF      <- file.path(PROJECT_ROOT, "results", "ablation", "rf")                # output folder of 03_RF_ablation.py
 
-# --- Figures (one folder per producing script) --------------------------------
-FIG_DIVERSITY       <- file.path(PROJECT_ROOT, "results", "plots", "analyses", "diversity")
-FIG_NETWORK_METRICS <- file.path(PROJECT_ROOT, "results", "plots", "analyses", "network_metrics")
-FIG_CLASSIFICATION  <- file.path(PROJECT_ROOT, "results", "plots", "machine_learning")
-FIG_INTERPRETATION  <- file.path(PROJECT_ROOT, "results", "plots", "analyses", "attributions")
-FIG_RF_FEATURES     <- file.path(PROJECT_ROOT, "results", "plots", "analyses", "attributions")
-FIG_MODULES         <- file.path(PROJECT_ROOT, "results", "plots", "analyses", "modules")
-FIG_ECOLI           <- file.path(PROJECT_ROOT, "results", "plots", "analyses", "ecoli")
+# --- Figures (one folder per producing script) ---------------------------------
+FIG_DIVERSITY        <- file.path(PROJECT_ROOT, "results", "figures", "diversity")
+FIG_NETWORK_METRICS  <- file.path(PROJECT_ROOT, "results", "figures", "network_metrics")
+FIG_CLASSIFICATION   <- file.path(PROJECT_ROOT, "results", "figures", "classification")
+FIG_INTERPRETATION   <- file.path(PROJECT_ROOT, "results", "figures", "interpretation")
+FIG_RF_FEATURES      <- file.path(PROJECT_ROOT, "results", "figures", "rf_features")
+FIG_MODULES          <- file.path(PROJECT_ROOT, "results", "figures", "modules")
+FIG_ECOLI            <- file.path(PROJECT_ROOT, "results", "figures", "ecoli")
