@@ -719,29 +719,6 @@ p_clr_boxplots <- ggplot(clr_plot_df, aes(x = clr, y = node_clean, fill = condit
 # Display Plot
 print(p_clr_boxplots)
 
-# save top 20 gnn and rf nodes
-if(!dir.exists(RES_INTERP_TABLES)) {
-  dir.create(RES_INTERP_TABLES, recursive = TRUE)
-}
-
-write.csv(rf_feat, file.path(RES_INTERP_TABLES, "top_20_rf.csv"), row.names = FALSE)
-write.csv(gnn_feat, file.path(RES_INTERP_TABLES, "top_20_graphnodes.csv"), row.names = FALSE)
-
-# # Extract e coli degree
-# ecoli_degree_df <- degree_df %>%
-#   filter(str_detect(node_clean, "(?i)escherichia coli")) %>%
-#   right_join(
-#     graph_meta %>% select(subject_id, condition),
-#     by = c("graph_name" = "subject_id")
-#   ) %>%
-#   select(graph_name, degree_norm) %>%
-#   arrange(desc(degree_norm)) %>% 
-#   rename(subject_id = graph_name, ecoli_degree = degree_norm) %>% 
-#   mutate(ecoli_present = if_else(!is.na(ecoli_degree), TRUE, FALSE)) %>%
-#   mutate(ecoli_degree = replace_na(ecoli_degree, 0))
-
-# write.csv(ecoli_degree_df, file.path(RES_INTERP_TABLES, "ecoli_degree_per_subject.csv"), row.names = FALSE)
-
 # Save plots
 save_path = FIG_RF_FEATURES
 if (!dir.exists(save_path)) {

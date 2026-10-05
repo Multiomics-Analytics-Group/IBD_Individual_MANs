@@ -27,7 +27,7 @@ RES_GNN_TABLES = PROJECT_ROOT / "results" / "models" / "gnn" / "tables"         
 # --- Results: interpretation (integrated gradients) ----------------------------
 RES_INTERP_SEEDS = PROJECT_ROOT / "results" / "interpretation" / "per_seed"  # seed_*/ folders of integrated-gradients attributions
 RES_INTERP_AGG = PROJECT_ROOT / "results" / "interpretation"                 # all_seeds_*.csv aggregated over seeds
-RES_INTERP_TABLES = PROJECT_ROOT / "results" / "interpretation" / "tables"   # module membership, top-20 features
+RES_INTERP_TABLES = PROJECT_ROOT / "results" / "interpretation" / "tables"   # module membership table
 
 # --- Results: ablation ---------------------------------------------------------
 RES_ABLATION_GNN = PROJECT_ROOT / "results" / "ablation" / "gnn"                   # cross_evaluation_*_modules.csv (GNN module ablation)
