@@ -1,9 +1,13 @@
+# Locate the project root (from any working directory inside the repo) and load shared paths
+.root <- getwd(); while (!file.exists(file.path(.root, "code", "common", "paths.R")) && dirname(.root) != .root) .root <- dirname(.root)
+source(file.path(.root, "code", "common", "paths.R"))
+
 library(tidyverse)
-source("code/02_networks/00.modified_sparCC.R")
+source(file.path(PROJECT_ROOT, "code", "02_networks", "00.modified_sparCC.R"))
 
 # Load previously filtered IBD data
 #------------------------------------------------------------------
-IBD_composite <- readRDS("data/processed/IBD_CuratedMetagenomicData/IBD_studies_counts_filtered_composite.rds")
+IBD_composite <- readRDS(file.path(DATA_ABUNDANCE, "IBD_studies_counts_filtered_composite.rds"))
 
 # HMP will be used for discovery and HallAB for validation, so I separate them here
 HMP_composite <- IBD_composite[["HMP_2019_ibdmdb"]]
@@ -121,7 +125,7 @@ withr::with_seed(
 
 # save files
 #------------------------------------------------------------------
-save_path <- "data/processed/IBD_CuratedMetagenomicData/subject_networks/timepoints/"
+save_path <- DATA_ASSOC_MATRICES
 dir.create(save_path, recursive = TRUE, showWarnings = FALSE)
-saveRDS(subject_assomatrices_species_sparcc, paste0(save_path, "subject_assomatrices_species_sparcc_HMP.rds")) # raw association matrices
-saveRDS(subject_assomatrices_species_sparcc_Hall, paste0(save_path, "subject_assomatrices_species_sparcc_Hall.rds")) # raw association matrices
+saveRDS(subject_assomatrices_species_sparcc, file.path(save_path, "subject_assomatrices_species_sparcc_HMP.rds")) # raw association matrices
+saveRDS(subject_assomatrices_species_sparcc_Hall, file.path(save_path, "subject_assomatrices_species_sparcc_Hall.rds")) # raw association matrices

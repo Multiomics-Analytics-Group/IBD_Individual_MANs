@@ -5,13 +5,13 @@ from torch_geometric.utils import to_networkx
 from pathlib import Path
 
 # --- Setup Paths ---
-PROJECT_ROOT = Path.cwd()
-CURRENT_DIR = PROJECT_ROOT / "code/04_analyses"
-if str(CURRENT_DIR) not in sys.path:
-    sys.path.append(str(CURRENT_DIR))
+# Locate the project root (works from the terminal and interactively) and load shared paths
+_start = Path(__file__).resolve() if "__file__" in globals() else Path.cwd()
+_root = next(p for p in (_start, *_start.parents) if (p / "code" / "common" / "paths.py").exists())
+sys.path.insert(0, str(_root / "code" / "common"))
+import paths
 
-PROCESSED_DATA_PATH = PROJECT_ROOT / "data/processed/"
-PYG_DATASET_ROOT = PROCESSED_DATA_PATH / "pyg_datasets"
+PYG_DATASET_ROOT = paths.DATA_PYG
 
 # Define the list of subfolders within PYG_DATASET_ROOT to process.
 DATASET_SUBFOLDERS = [

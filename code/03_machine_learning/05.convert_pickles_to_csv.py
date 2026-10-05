@@ -1,5 +1,6 @@
 import pandas as pd
 import pickle
+import sys
 from pathlib import Path
 import re
 import numpy as np
@@ -191,20 +192,23 @@ def prepare_graph_for_r(graph_folder_path, save_curve_csv=True):
 
 #  Main Execution
 
-# Define Project Root
-PROJECT_ROOT = Path.cwd()
+# Locate the project root (works from the terminal and interactively) and load shared paths
+_start = Path(__file__).resolve() if "__file__" in globals() else Path.cwd()
+_root = next(p for p in (_start, *_start.parents) if (p / "code" / "common" / "paths.py").exists())
+sys.path.insert(0, str(_root / "code" / "common"))
+import paths
 
 # Define Traditional Path
-TRADITIONAL_RESULTS_DIR = PROJECT_ROOT / "results/machine_learning/traditional_models"
+TRADITIONAL_RESULTS_DIR = paths.RES_TRAD_PICKLES
 
 # Define list of Graph Paths to process
 GRAPH_MODEL_PATHS = [
-    "results/machine_learning/graph_based_models/HMP_w_functions_onehot_graphtypes/timepoints_self/"
+    (paths.RES_GNN_PICKLES, paths.RES_GNN_TABLES)
 ]
 
 # Process Traditional Models 
 print("--- Processing Traditional Models ---")
-EXPORT_DIR_TRAD = TRADITIONAL_RESULTS_DIR / "converted_pickles"
+EXPORT_DIR_TRAD = paths.RES_TRAD_TABLES
 EXPORT_DIR_TRAD.mkdir(parents=True, exist_ok=True)
 
 trad_summary_df, trad_tracking_df, trad_curve_df, trad_features_df = prepare_traditional_for_r(TRADITIONAL_RESULTS_DIR)
@@ -220,11 +224,7 @@ if not trad_features_df.empty:
 
 
 # Process All Graph Models 
-for rel_path in GRAPH_MODEL_PATHS:
-    current_graph_dir = PROJECT_ROOT / rel_path
-    
-    # Create a unique export folder inside each model's directory
-    export_dir = current_graph_dir / "converted_pickles"
+for current_graph_dir, export_dir in GRAPH_MODEL_PATHS:
     export_dir.mkdir(parents=True, exist_ok=True)
     
     print(f"\n--- Processing Graph Model: {current_graph_dir.name} ---")

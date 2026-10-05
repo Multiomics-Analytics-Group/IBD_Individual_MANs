@@ -1,3 +1,7 @@
+# Locate the project root (from any working directory inside the repo) and load shared paths
+.root <- getwd(); while (!file.exists(file.path(.root, "code", "common", "paths.R")) && dirname(.root) != .root) .root <- dirname(.root)
+source(file.path(.root, "code", "common", "paths.R"))
+
 library(tidyverse)
 library(ggraph)
 library(ggrepel)
@@ -14,11 +18,11 @@ library(patchwork)
 
 # Load data
 # ------------------------------------------------------------------------------
-IBD_composite <- readRDS("data/processed/IBD_CuratedMetagenomicData/IBD_studies_counts_filtered_composite.rds")
+IBD_composite <- readRDS(file.path(DATA_ABUNDANCE, "IBD_studies_counts_filtered_composite.rds"))
 HMP <- IBD_composite[["HMP_2019_ibdmdb"]]
 
 # Load dysbiosis scores
-HMP2_scores <- read_tsv("data/external/HMP2_dysbiosis_scores.tsv", col_names = FALSE) %>% 
+HMP2_scores <- read_tsv(file.path(DATA_EXTERNAL, "HMP2_dysbiosis_scores.tsv"), col_names = FALSE) %>% 
   rename(`External ID` = X1, dysbiosis_score = X2, dysbiosis_state = X3)
 
 HMP_timepoint_filtered <- HMP %>% 
@@ -76,8 +80,7 @@ HMP_clr_agg <- HMP_clr %>%
     summarise(across(everything(), mean), .groups = "drop") %>%
     column_to_rownames("subject_id")
 
-PROCESSED_DATA_PATH <- file.path("data", "processed",
-  "pyg_datasets", "HMP_timepoints_self_w_functions_onehot", "gml", "0_3")
+PROCESSED_DATA_PATH <- file.path(DATA_PYG, "HMP_timepoints_self_w_functions_onehot", "gml", "0_3")
 
 read_gml_igraph <- function(gml_file) {
   tryCatch(
@@ -97,11 +100,11 @@ names(igraph_list) <- tools::file_path_sans_ext(basename(gml_files))
 
 # NODES
 # ------------------------------------------------------------------------------
-parent_folder <- "results/machine_learning/graph_based_models/model_interpretation/HMP_timepoints_self_t_0_3/interpretation_10_seeds"
+parent_folder <- RES_INTERP_AGG
 meta_cols <- c("graph_name", "logits", "true_label", "convergence_delta")
 
 if (!file.exists(file.path(parent_folder, "all_seeds_attributions_raw.csv"))) {
-  seed_dirs <- list.dirs(parent_folder, recursive = FALSE, full.names = TRUE)
+  seed_dirs <- list.dirs(RES_INTERP_SEEDS, recursive = FALSE, full.names = TRUE)
   seed_dirs <- seed_dirs[grepl("seed_", basename(seed_dirs))][1:50]
 
   all_seeds_raw <- map_dfr(seed_dirs, function(s_dir) {
@@ -878,7 +881,7 @@ print(four_scatters_grid)
 if (!file.exists(file.path(parent_folder, "all_seeds_edge_attributions_raw.csv"))) {
   cat("Aggregating raw edge attributions across all seeds...\n")
   
-  seed_dirs <- list.dirs(parent_folder, recursive = FALSE, full.names = TRUE)
+  seed_dirs <- list.dirs(RES_INTERP_SEEDS, recursive = FALSE, full.names = TRUE)
   seed_dirs <- seed_dirs[grepl("seed_", basename(seed_dirs))][1:50]
 
   all_seeds_edges_raw <- map_dfr(seed_dirs, function(s_dir) {
@@ -1181,7 +1184,7 @@ node_taxa_facets <- node_taxa_facets %>%
 node_membership_table <- node_taxa_facets %>%
   distinct(species_name, module)
 
-# write_csv(node_membership_table, "results/tables/analyses/attributions/node_module_membership_table.csv")
+# write_csv(node_membership_table, file.path(RES_INTERP_TABLES, "node_module_membership_table.csv"))
 
 # Render Faceted Metagraphs using identity color scale
 taxa_facets_plot <- ggplot() +
@@ -1248,7 +1251,7 @@ nodes_in_graph <- backbone_graph %>%
   pull(name)
 
 # Load functional attributes (GO Biological Processes) and filter to nodes present in the backbone graph
-function_BP_idf <- read_csv("data/external/functional_attributes/HMP/taxa_one_hot_encoded_one_hot_bp_weighted.csv") %>% 
+function_BP_idf <- read_csv(file.path(DATA_FUNCTIONAL_ATTR, "HMP", "taxa_one_hot_encoded_one_hot_bp_weighted.csv")) %>% 
   mutate(node_clean = if_else(str_detect(taxa_lineage, "s__"),
                               str_replace(taxa_lineage, ".*s__", ""),
                               taxa_lineage),
@@ -1439,7 +1442,7 @@ fun_p2 <- Heatmap(
 draw(fun_p2, padding = unit(c(15, 20, 5, 50), "mm"))
 
 
-save_path = "results/plots/analyses/attributions"
+save_path = FIG_INTERPRETATION
 if (!dir.exists(save_path)) {
   dir.create(save_path, recursive = TRUE)
 }

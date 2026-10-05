@@ -10,6 +10,14 @@ import pandas as pd
 from collections import defaultdict
 import numpy as np
 import pickle
+import sys
+
+# Locate the project root (works from the terminal and interactively) and load shared paths
+_start = Path(__file__).resolve() if "__file__" in globals() else Path.cwd()
+_root = next(p for p in (_start, *_start.parents) if (p / "code" / "common" / "paths.py").exists())
+sys.path.insert(0, str(_root / "code" / "common"))
+sys.path.insert(0, str(_root / "code" / "03_machine_learning"))  # local modules of this stage
+import paths
 
 # Import custom functions
 from graph_model_functions import (
@@ -26,9 +34,7 @@ from model_definitions import (
         DualStreamGNN
 )
 
-PROJECT_ROOT = Path.cwd().parent.parent
-PROCESSED_DATA_PATH = PROJECT_ROOT / "data/processed/"
-RESULTS_PATH = PROJECT_ROOT / "results/machine_learning/graph_based_models/HMP_w_functions_onehot_graphtypes/"
+RESULTS_PATH = paths.RES_GNN_PICKLES
 
 REPRODUCIBLE_SEED = 200
 set_seed(REPRODUCIBLE_SEED)
@@ -99,11 +105,11 @@ for grid_idx, params in enumerate(grid_combinations):
     dataset_name = ("pyg_dataset_species_threshold_"
                     f"{params['weight_type']}{params['t_str']}.pt")
 
-    dataset_path = PROCESSED_DATA_PATH / "pyg_datasets" / \
+    dataset_path = paths.DATA_PYG / \
         (f'{params['training_dataset']}_{params['network_type']}_w_functions_onehot') / dataset_name
 
     # External data
-    dataset_path_Hall = PROCESSED_DATA_PATH / "pyg_datasets" / \
+    dataset_path_Hall = paths.DATA_PYG / \
         (f'{params['validation_dataset']}_{params["network_type"]}_w_functions_onehot') / dataset_name
 
 
@@ -326,7 +332,7 @@ for grid_idx, params in enumerate(grid_combinations):
     final_split_table = final_split_table[['fold', 'split', 'graph_name', 'true_label', 'predicted_label']]
 
 
-    SPECIFIC_RESULTS_PATH = RESULTS_PATH / params['network_type']
+    SPECIFIC_RESULTS_PATH = RESULTS_PATH
     SPECIFIC_RESULTS_PATH.mkdir(parents=True, exist_ok=True)
 
     embeddings_output_path = SPECIFIC_RESULTS_PATH / f"artifacts_grid_{grid_idx+1}_COMBINED.pkl" 

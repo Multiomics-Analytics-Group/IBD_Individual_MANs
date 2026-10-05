@@ -1,12 +1,16 @@
+# Locate the project root (from any working directory inside the repo) and load shared paths
+.root <- getwd(); while (!file.exists(file.path(.root, "code", "common", "paths.R")) && dirname(.root) != .root) .root <- dirname(.root)
+source(file.path(.root, "code", "common", "paths.R"))
+
 library(tidyverse)
 
 # Load previously saved datasets
 #-------------------------------------------------------------------------------
-load_path <- "data/raw/IBD_CuratedMetagenomicData/"
-IBD_CMD_counts <- readRDS(paste0(load_path, "IBD_studies_counts_raw.rds"))
-IBD_CMD_counts_baseline <- readRDS(paste0(load_path, "IBD_studies_counts_raw_baseline.rds"))
-IBD_metadata <- readRDS(paste0(load_path, "IBD_studies_metadata.rds"))
-IBD_metadata_baseline <- readRDS(paste0(load_path, "IBD_studies_metadata_baseline.rds"))
+load_path <- DATA_RAW
+IBD_CMD_counts <- readRDS(file.path(load_path, "IBD_studies_counts_raw.rds"))
+IBD_CMD_counts_baseline <- readRDS(file.path(load_path, "IBD_studies_counts_raw_baseline.rds"))
+IBD_metadata <- readRDS(file.path(load_path, "IBD_studies_metadata.rds"))
+IBD_metadata_baseline <- readRDS(file.path(load_path, "IBD_studies_metadata_baseline.rds"))
 
 # Apply taxonomic prevalence filter
 #-------------------------------------------------------------------------------
@@ -70,9 +74,9 @@ filtered_IBD_CMD_baseline_composite <- map2(filtered_IBD_CMD_baseline, IBD_metad
 })
 
 # Save filtered datasets
-save_path2 <- "data/processed/IBD_CuratedMetagenomicData/"
+save_path2 <- DATA_ABUNDANCE
 dir.create(save_path2, showWarnings = FALSE, recursive = TRUE)
-saveRDS(filtered_IBD_CMD, paste0(save_path2, "IBD_studies_counts_filtered.rds"))
-saveRDS(filtered_IBD_CMD_baseline, paste0(save_path2, "IBD_studies_counts_filtered_baseline.rds"))
-saveRDS(filtered_IBD_CMD_composite, paste0(save_path2, "IBD_studies_counts_filtered_composite.rds"))
-saveRDS(filtered_IBD_CMD_baseline_composite, paste0(save_path2, "IBD_studies_counts_filtered_baseline_composite.rds"))
+saveRDS(filtered_IBD_CMD, file.path(save_path2, "IBD_studies_counts_filtered.rds"))
+saveRDS(filtered_IBD_CMD_baseline, file.path(save_path2, "IBD_studies_counts_filtered_baseline.rds"))
+saveRDS(filtered_IBD_CMD_composite, file.path(save_path2, "IBD_studies_counts_filtered_composite.rds"))
+saveRDS(filtered_IBD_CMD_baseline_composite, file.path(save_path2, "IBD_studies_counts_filtered_baseline_composite.rds"))

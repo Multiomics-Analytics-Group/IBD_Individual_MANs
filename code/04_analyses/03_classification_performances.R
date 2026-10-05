@@ -1,14 +1,18 @@
+# Locate the project root (from any working directory inside the repo) and load shared paths
+.root <- getwd(); while (!file.exists(file.path(.root, "code", "common", "paths.R")) && dirname(.root) != .root) .root <- dirname(.root)
+source(file.path(.root, "code", "common", "paths.R"))
+
 library(tidyverse)
 library(scales)
 library(purrr)
 
-TRAD_PATH <- "results/machine_learning/traditional_models/converted_pickles/traditional_summary_metrics.csv"
+TRAD_PATH <- file.path(RES_TRAD_TABLES, "traditional_summary_metrics.csv")
 GRAPH_PATHS <- c(
-  "results/machine_learning/graph_based_models/HMP_w_functions_onehot_graphtypes/timepoints_self/converted_pickles/graph_summary_metrics.csv"
+  file.path(RES_GNN_TABLES, "graph_summary_metrics.csv")
 )
 
 load_graph_metrics <- function(path) {
-  label <- basename(dirname(dirname(path)))
+  label <- "timepoints_self"  # network type of the GNN runs (previously derived from the folder name)
   read_csv(path, show_col_types = FALSE) %>% mutate(graph_source = label)
 }
 
@@ -148,7 +152,7 @@ print(p3)
 print(p4)
 
 # save plots pdf 300 dpi
-save_path <- "results/plots/machine_learning"
+save_path <- FIG_CLASSIFICATION
 
 if (!dir.exists(save_path)) {
   dir.create(save_path, recursive = TRUE)

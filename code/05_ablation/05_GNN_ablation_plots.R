@@ -1,3 +1,7 @@
+# Locate the project root (from any working directory inside the repo) and load shared paths
+.root <- getwd(); while (!file.exists(file.path(.root, "code", "common", "paths.R")) && dirname(.root) != .root) .root <- dirname(.root)
+source(file.path(.root, "code", "common", "paths.R"))
+
 library(tidyverse)
 library(ggh4x)
 library(yardstick)
@@ -24,14 +28,14 @@ pred_cols <- c("true_label", "predicted_label", "prob", "graph_name",
 # 1. Load & filter data
 # =============================================================================
 
-ablation_graphs_raw <- read_csv("cross_evaluation_raw_metrics_per_run_modules.csv") %>%
+ablation_graphs_raw <- read_csv(file.path(RES_ABLATION_GNN, "cross_evaluation_raw_metrics_per_run_modules.csv")) %>%
   filter(train_config %in% keep_sets, eval_set %in% keep_sets)
 
-ablation_predictions <- read_csv("cross_evaluation_predictions_modules.csv") %>%
+ablation_predictions <- read_csv(file.path(RES_ABLATION_GNN, "cross_evaluation_predictions_modules.csv")) %>%
   select(all_of(pred_cols)) %>%
   filter(train_config %in% keep_sets, eval_set %in% keep_sets)
 
-e_coli_graph_metrics <- read_csv("e_coli_graph_metrics.csv")
+e_coli_graph_metrics <- read_csv(file.path(RES_ABLATION_GNN, "e_coli_graph_metrics.csv"))
 
 # =============================================================================
 # 2. Per-run metrics in tidy long format

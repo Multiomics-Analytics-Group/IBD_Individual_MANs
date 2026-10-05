@@ -1,3 +1,7 @@
+# Locate the project root (from any working directory inside the repo) and load shared paths
+.root <- getwd(); while (!file.exists(file.path(.root, "code", "common", "paths.R")) && dirname(.root) != .root) .root <- dirname(.root)
+source(file.path(.root, "code", "common", "paths.R"))
+
 library(tidyverse)
 library(igraph)
 library(yardstick)
@@ -10,11 +14,11 @@ library(patchwork)
 
 # Load data
 # ------------------------------------------------------------------------------
-IBD_composite <- readRDS("data/processed/IBD_CuratedMetagenomicData/IBD_studies_counts_filtered_composite.rds")
+IBD_composite <- readRDS(file.path(DATA_ABUNDANCE, "IBD_studies_counts_filtered_composite.rds"))
 HMP <- IBD_composite[["HMP_2019_ibdmdb"]]
 
 # Load dysbiosis scores
-HMP2_scores <- read_tsv("data/external/HMP2_dysbiosis_scores.tsv", col_names = FALSE) %>% 
+HMP2_scores <- read_tsv(file.path(DATA_EXTERNAL, "HMP2_dysbiosis_scores.tsv"), col_names = FALSE) %>% 
   rename(`External ID` = X1, dysbiosis_score = X2, dysbiosis_state = X3)
 
 HMP_timepoint_filtered <- HMP %>% 
@@ -72,8 +76,7 @@ HMP_clr_agg <- HMP_clr %>%
   summarise(across(everything(), mean), .groups = "drop") %>%
   column_to_rownames("subject_id")
 
-PROCESSED_DATA_PATH <- file.path("data", "processed",
-                                 "pyg_datasets", "HMP_timepoints_self_w_functions_onehot", "gml", "0_3")
+PROCESSED_DATA_PATH <- file.path(DATA_PYG, "HMP_timepoints_self_w_functions_onehot", "gml", "0_3")
 
 read_gml_igraph <- function(gml_file) {
   tryCatch(
@@ -93,7 +96,7 @@ names(igraph_list) <- tools::file_path_sans_ext(basename(gml_files))
 
 # RF FEATURES
 # Load traditional model performances
-baseline_results_path <- "results/machine_learning/traditional_models/converted_pickles/traditional_summary_metrics.csv"
+baseline_results_path <- file.path(RES_TRAD_TABLES, "traditional_summary_metrics.csv")
 
 valid_rf_runs <- read_csv(baseline_results_path) %>% 
   filter(val_type == "internal_hmp") %>% 
@@ -103,7 +106,7 @@ valid_rf_runs <- read_csv(baseline_results_path) %>%
   pull(run)
 
 # make joint baseline metrics plot with graph-based models for comparison
-trad_models_features_path <- "results/machine_learning/traditional_models/converted_pickles/traditional_selected_features.csv"
+trad_models_features_path <- file.path(RES_TRAD_TABLES, "traditional_selected_features.csv")
 trad_models_features <- read_csv(trad_models_features_path) %>% 
   filter(model %in% c("RF")) %>%
   # Clean up taxon names
@@ -134,11 +137,11 @@ top_rf_features <- rf_features %>% slice_max(order_by = mean_importance_score, n
 
 # NODES
 # ------------------------------------------------------------------------------
-parent_folder <- "results/machine_learning/graph_based_models/model_interpretation/HMP_timepoints_self_t_0_3/interpretation_10_seeds"
+parent_folder <- RES_INTERP_AGG
 meta_cols <- c("graph_name", "logits", "true_label", "convergence_delta")
 
 if (!file.exists(file.path(parent_folder, "all_seeds_attributions_raw.csv"))) {
-  seed_dirs <- list.dirs(parent_folder, recursive = FALSE, full.names = TRUE)
+  seed_dirs <- list.dirs(RES_INTERP_SEEDS, recursive = FALSE, full.names = TRUE)
   seed_dirs <- seed_dirs[grepl("seed_", basename(seed_dirs))][1:50]
 
   all_seeds_raw <- map_dfr(seed_dirs, function(s_dir) {
@@ -717,12 +720,12 @@ p_clr_boxplots <- ggplot(clr_plot_df, aes(x = clr, y = node_clean, fill = condit
 print(p_clr_boxplots)
 
 # save top 20 gnn and rf nodes
-if(!dir.exists("results/tables/analyses/attributions")) {
-  dir.create("results/tables/analyses/attributions", recursive = TRUE)
+if(!dir.exists(RES_INTERP_TABLES)) {
+  dir.create(RES_INTERP_TABLES, recursive = TRUE)
 }
 
-write.csv(rf_feat, "results/tables/analyses/attributions/top_20_rf.csv", row.names = FALSE)
-write.csv(gnn_feat, "results/tables/analyses/attributions/top_20_graphnodes.csv", row.names = FALSE)
+write.csv(rf_feat, file.path(RES_INTERP_TABLES, "top_20_rf.csv"), row.names = FALSE)
+write.csv(gnn_feat, file.path(RES_INTERP_TABLES, "top_20_graphnodes.csv"), row.names = FALSE)
 
 # # Extract e coli degree
 # ecoli_degree_df <- degree_df %>%
@@ -737,10 +740,10 @@ write.csv(gnn_feat, "results/tables/analyses/attributions/top_20_graphnodes.csv"
 #   mutate(ecoli_present = if_else(!is.na(ecoli_degree), TRUE, FALSE)) %>%
 #   mutate(ecoli_degree = replace_na(ecoli_degree, 0))
 
-# write.csv(ecoli_degree_df, "results/tables/analyses/attributions/ecoli_degree_per_subject.csv", row.names = FALSE)
+# write.csv(ecoli_degree_df, file.path(RES_INTERP_TABLES, "ecoli_degree_per_subject.csv"), row.names = FALSE)
 
 # Save plots
-save_path = "results/plots/analyses/attributions"
+save_path = FIG_RF_FEATURES
 if (!dir.exists(save_path)) {
   dir.create(save_path, recursive = TRUE)
 }

@@ -8,18 +8,19 @@ from torch_geometric.utils import add_self_loops
 
 
 # --- SETUP & CONFIGURATION ---
-PROJECT_ROOT = Path.cwd()
-CURRENT_DIR = PROJECT_ROOT / "code/03_machine_learning"
-if str(CURRENT_DIR) not in sys.path:
-    sys.path.append(str(CURRENT_DIR))
+# Locate the project root (works from the terminal and interactively) and load shared paths
+_start = Path(__file__).resolve() if "__file__" in globals() else Path.cwd()
+_root = next(p for p in (_start, *_start.parents) if (p / "code" / "common" / "paths.py").exists())
+sys.path.insert(0, str(_root / "code" / "common"))
+sys.path.insert(0, str(_root / "code" / "03_machine_learning"))  # local modules of this stage
+import paths
 
 # Loading custom functions from helper_functions.py
 import helper_functions as hf
 
-PROCESSED_DATA_PATH = PROJECT_ROOT / "data/processed/IBD_CuratedMetagenomicData"
-RESULTS_PATH = PROJECT_ROOT / "data/processed/pyg_datasets"
-GML_BASE = PROCESSED_DATA_PATH / "subject_networks/gml"
-FUNCTIONS_PATH = PROJECT_ROOT / "data" / "external" / "functional_attributes" / "HMP"
+PROCESSED_DATA_PATH = paths.DATA_ABUNDANCE
+RESULTS_PATH = paths.DATA_PYG
+FUNCTIONS_PATH = paths.DATA_FUNCTIONAL_ATTR / "HMP"
 
 
 # Define the dataset metadata
@@ -40,7 +41,7 @@ DATASETS = {
 
 # Define Network Types and their paths
 NET_CONFIGS = {
-    "timepoints": GML_BASE / "timepoints"
+    "timepoints": paths.DATA_NETWORKS_GML
 }
 
 # Define thresholds and taxonomic ranks for filtering

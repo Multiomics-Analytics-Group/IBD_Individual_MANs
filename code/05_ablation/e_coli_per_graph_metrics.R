@@ -1,3 +1,7 @@
+# Locate the project root (from any working directory inside the repo) and load shared paths
+.root <- getwd(); while (!file.exists(file.path(.root, "code", "common", "paths.R")) && dirname(.root) != .root) .root <- dirname(.root)
+source(file.path(.root, "code", "common", "paths.R"))
+
 library(tidyverse)
 library(igraph)
 library(vegan)
@@ -8,9 +12,8 @@ library(grid)
 
 # Setup Paths & Configurations
 # ------------------------------------------------------------------------------
-PROCESSED_DATA_PATH <- file.path("data", "processed", 
-  "pyg_datasets", "HMP_timepoints_self_w_functions_onehot", "gml", "0_3")
-PARENT_FOLDER <- "results/machine_learning/graph_based_models/model_interpretation/HMP_timepoints_self_t_0_3/interpretation_10_seeds"
+PROCESSED_DATA_PATH <- file.path(DATA_PYG, "HMP_timepoints_self_w_functions_onehot", "gml", "0_3")
+PARENT_FOLDER <- RES_INTERP_AGG
 TARGET_SPECIES <- "Escherichia coli"  # Specify the target species for analysis
 
 # Helper Function for Taxonomy Name Cleaning
@@ -31,7 +34,7 @@ safe_wilcox_test <- function(data, formula_obj) {
   )
 }
 
-HMP2_scores <- read_tsv("data/external/HMP2_dysbiosis_scores.tsv", col_names = FALSE) %>% 
+HMP2_scores <- read_tsv(file.path(DATA_EXTERNAL, "HMP2_dysbiosis_scores.tsv"), col_names = FALSE) %>% 
   rename(`External ID` = X1, dysbiosis_score = X2, dysbiosis_state = X3)
 
 
@@ -79,7 +82,7 @@ ecoli_importance_norm <- ecoli_attributions %>%
 
 # 2. Extract Metadata & Abundance
 # ------------------------------------------------------------------------------
-IBD_composite <- readRDS("data/processed/IBD_CuratedMetagenomicData/IBD_studies_counts_filtered_composite.rds")
+IBD_composite <- readRDS(file.path(DATA_ABUNDANCE, "IBD_studies_counts_filtered_composite.rds"))
 HMP <- IBD_composite[["HMP_2019_ibdmdb"]]
 
 HMP_timepoint_filtered <- HMP %>% 
@@ -695,7 +698,7 @@ draw(
 )
 
 # save plots
-save_path <- "results/plots/analyses/ecoli"
+save_path <- FIG_ECOLI
 if (!dir.exists(save_path)) {
   dir.create(save_path, recursive = TRUE)
 }

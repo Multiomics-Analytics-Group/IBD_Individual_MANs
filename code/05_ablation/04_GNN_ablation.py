@@ -5,10 +5,18 @@ import pandas as pd
 from pathlib import Path
 import pickle
 import re
+import sys
 import torch
 from torch.utils.data import Subset
 from torch_geometric.loader import DataLoader as PyGDataLoader
 from sklearn.model_selection import train_test_split
+
+# Locate the project root (works from the terminal and interactively) and load shared paths
+_start = Path(__file__).resolve() if "__file__" in globals() else Path.cwd()
+_root = next(p for p in (_start, *_start.parents) if (p / "code" / "common" / "paths.py").exists())
+sys.path.insert(0, str(_root / "code" / "common"))
+sys.path.insert(0, str(_root / "code" / "05_ablation"))  # local modules of this stage
+import paths
 
 # --- CUSTOM IMPORTS ---
 from graph_model_functions import (
@@ -25,11 +33,8 @@ from model_definitions import (
 )
 
 # --- EXPERIMENT CONFIGURATION & PATHS ---
-PROJECT_ROOT = Path.cwd()
-PROCESSED_DATA_PATH = PROJECT_ROOT / "data/processed/"
-
-# Path to module membership table relative to project structure
-TABLE_PATH = PROJECT_ROOT / "results/tables/analyses/attributions/node_module_membership_table.csv"
+# Path to module membership table
+TABLE_PATH = paths.RES_INTERP_TABLES / "node_module_membership_table.csv"
 
 EXPERIMENTAL_CONFIG = {
     "num_repeats": 30,
@@ -199,10 +204,10 @@ def main():
     # 1. LOAD BASELINE WHOLE DATASETS
     dataset_name = f"pyg_dataset_species_threshold_{MODEL_PARAMS['weight_type']}{MODEL_PARAMS['t_str']}.pt"
 
-    dataset_path_train = PROCESSED_DATA_PATH / "pyg_datasets" / \
+    dataset_path_train = paths.DATA_PYG / \
         f"{MODEL_PARAMS['training_dataset']}_{MODEL_PARAMS['network_type']}_w_functions_onehot" / dataset_name
 
-    dataset_path_hall = PROCESSED_DATA_PATH / "pyg_datasets" / \
+    dataset_path_hall = paths.DATA_PYG / \
         f"{MODEL_PARAMS['validation_dataset']}_{MODEL_PARAMS['network_type']}_w_functions_onehot" / dataset_name
 
     print(f"Loading training dataset from: {dataset_path_train}")
@@ -411,9 +416,9 @@ def main():
     final_predictions_df = pd.concat(all_individual_preds_df, ignore_index=True)
 
     # Save outputs locally with updated filenames
-    output_path = PROJECT_ROOT / "cross_evaluation_performance_summary_modules.csv"
-    raw_output_path = PROJECT_ROOT / "cross_evaluation_raw_metrics_per_run_modules.csv"
-    preds_output_path = PROJECT_ROOT / "cross_evaluation_predictions_modules.csv"
+    output_path = paths.RES_ABLATION_GNN / "cross_evaluation_performance_summary_modules.csv"
+    raw_output_path = paths.RES_ABLATION_GNN / "cross_evaluation_raw_metrics_per_run_modules.csv"
+    preds_output_path = paths.RES_ABLATION_GNN / "cross_evaluation_predictions_modules.csv"
 
     # results_df.to_csv(output_path, index=False)
     # raw_results_df.to_csv(raw_output_path, index=False)

@@ -26,3 +26,6 @@ __pycache__/
 # OS / editors
 .DS_Store
 .vscode/
+
+# Written by Rscript when a script prints a plot
+Rplots.pdf

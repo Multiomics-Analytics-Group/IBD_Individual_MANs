@@ -14,17 +14,16 @@ from captum.attr import IntegratedGradients
 # -----------------------------------------------------
 parser = argparse.ArgumentParser(description="Run GNN Model Interpretation for a given seed.")
 parser.add_argument("--seed", type=int, default=100, help="Random seed for reproducibility")
-args = parser.parse_args()
+args, _ = parser.parse_known_args()  # tolerate the extra arguments passed by Jupyter kernels
 
 REPRODUCIBLE_SEED = args.seed
 
-# Set up project root and current directory
-# PROJECT_ROOT = Path.cwd()
-PROJECT_ROOT = Path("/Users/afecun@dtu.dk/Documents/XAI_IBD_Paper/") # it's hardcoded I know
-# CURRENT_DIR = PROJECT_ROOT / "code/03_machine_learning"
-
-# if str(CURRENT_DIR) not in sys.path:
-#     sys.path.append(str(CURRENT_DIR))
+# Locate the project root (works from the terminal and interactively) and load shared paths
+_start = Path(__file__).resolve() if "__file__" in globals() else Path.cwd()
+_root = next(p for p in (_start, *_start.parents) if (p / "code" / "common" / "paths.py").exists())
+sys.path.insert(0, str(_root / "code" / "common"))
+sys.path.insert(0, str(_root / "code" / "03_machine_learning"))  # local modules of this stage
+import paths
 
 # Custom imports
 from graph_model_functions import train_model2, set_seed
@@ -49,17 +48,13 @@ PARAMS = {
     'network_type': 'timepoints_self' 
 }
 
-PROCESSED_DATA_PATH = PROJECT_ROOT / "data/processed/IBD_CuratedMetagenomicData"
-FUNCTIONS_PATH = PROJECT_ROOT / "data" / "external"
-TAXONOMY_PATH = PROJECT_ROOT / "data" / "processed" / "pyg_datasets" / f"HMP_{PARAMS['network_type']}_w_functions_onehot"
+PROCESSED_DATA_PATH = paths.DATA_ABUNDANCE
+FUNCTIONS_PATH = paths.DATA_FUNCTIONAL_ATTR
+TAXONOMY_PATH = paths.DATA_PYG / f"HMP_{PARAMS['network_type']}_w_functions_onehot"
 
 # Set up seed-specific output directory
 # -----------------------------------------------------
-RESULTS_PATH = (
-    PROJECT_ROOT / "results" / "machine_learning" / "graph_based_models" / 
-    "model_interpretation" / f"HMP_{PARAMS['network_type']}_t_{PARAMS['t_str']}" / 
-    "interpretation_10_seeds" / f"seed_{REPRODUCIBLE_SEED}"
-)
+RESULTS_PATH = paths.RES_INTERP_SEEDS / f"seed_{REPRODUCIBLE_SEED}"
 RESULTS_PATH.mkdir(parents=True, exist_ok=True)
 
 
@@ -71,7 +66,7 @@ valid_graphs = dataset.name
 
 # Load feature tables
 # -------------------------------------
-func_emb_BP_idf = pd.read_csv(FUNCTIONS_PATH / "functional_attributes" / "HMP" / 
+func_emb_BP_idf = pd.read_csv(FUNCTIONS_PATH / "HMP" / 
                               "taxa_one_hot_encoded_one_hot_bp_weighted.csv", index_col=0)
 
 # Load taxa hierarchy

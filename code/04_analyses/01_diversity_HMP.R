@@ -1,9 +1,13 @@
+# Locate the project root (from any working directory inside the repo) and load shared paths
+.root <- getwd(); while (!file.exists(file.path(.root, "code", "common", "paths.R")) && dirname(.root) != .root) .root <- dirname(.root)
+source(file.path(.root, "code", "common", "paths.R"))
+
 library(tidyverse)
 library(vegan)
 
 # Load previously processed and filtered data
 #-------------------------------------------------------------------------------
-IBD_composite <- readRDS("data/processed/IBD_CuratedMetagenomicData/IBD_studies_counts_filtered_composite.rds")
+IBD_composite <- readRDS(file.path(DATA_ABUNDANCE, "IBD_studies_counts_filtered_composite.rds"))
 
 HMP <- IBD_composite[["HMP_2019_ibdmdb"]]
 
@@ -548,7 +552,7 @@ subject_panel_plot <- ggplot(subject_panel_data, aes(x = subject_id, y = 1, fill
   )
 
   # create directory, save plots, and return tibble of saved paths
-  out_dir <- "results/plots/analyses/diversity"
+  out_dir <- FIG_DIVERSITY
   if (!dir.exists(out_dir)) dir.create(out_dir, recursive = TRUE)
 
   plot_list <- list(

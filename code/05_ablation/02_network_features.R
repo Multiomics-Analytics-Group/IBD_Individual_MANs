@@ -1,3 +1,7 @@
+# Locate the project root (from any working directory inside the repo) and load shared paths
+.root <- getwd(); while (!file.exists(file.path(.root, "code", "common", "paths.R")) && dirname(.root) != .root) .root <- dirname(.root)
+source(file.path(.root, "code", "common", "paths.R"))
+
 library(tidyverse)
 library(igraph)
 library(rstatix)
@@ -6,10 +10,10 @@ library(rstatix)
 # 0. Configuration
 # =============================================================================
 
-PROCESSED_DATA_PATH <- file.path("data", "processed", "pyg_datasets")
-IBD_DATA_PATH       <- "data/processed/IBD_CuratedMetagenomicData/IBD_studies_counts_filtered_composite.rds"
-MODULES_TABLE       <- "results/tables/analyses/attributions/node_module_membership_table.csv"
-SAVE_PATH           <- "results/plots/analyses/modules"
+PROCESSED_DATA_PATH <- DATA_PYG
+IBD_DATA_PATH       <- file.path(DATA_ABUNDANCE, "IBD_studies_counts_filtered_composite.rds")
+MODULES_TABLE       <- file.path(RES_INTERP_TABLES, "node_module_membership_table.csv")
+SAVE_PATH           <- FIG_MODULES
 
 # Metrics shown in the plots (facet order follows this vector)
 metric_labels <- c(

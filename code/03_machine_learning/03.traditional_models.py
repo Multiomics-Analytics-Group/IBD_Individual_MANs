@@ -3,6 +3,7 @@ import numpy as np
 import copy
 import multiprocessing
 import pickle
+import sys
 from pathlib import Path
 from scipy.stats import gmean
 from sklearn.model_selection import StratifiedKFold, GridSearchCV, train_test_split
@@ -17,9 +18,14 @@ from sklearn.feature_selection import SelectKBest, f_classif, VarianceThreshold
 from sklearn.metrics import (accuracy_score, precision_score, recall_score, f1_score,
                              roc_auc_score, roc_curve, precision_recall_curve, average_precision_score, balanced_accuracy_score)
 
-PROJECT_ROOT = Path.cwd()
-PROCESSED_DATA_PATH = PROJECT_ROOT / "data/processed/IBD_CuratedMetagenomicData"
-RESULTS_PATH = PROJECT_ROOT / "results/machine_learning/traditional_models"
+# Locate the project root (works from the terminal and interactively) and load shared paths
+_start = Path(__file__).resolve() if "__file__" in globals() else Path.cwd()
+_root = next(p for p in (_start, *_start.parents) if (p / "code" / "common" / "paths.py").exists())
+sys.path.insert(0, str(_root / "code" / "common"))
+import paths
+
+PROCESSED_DATA_PATH = paths.DATA_ABUNDANCE
+RESULTS_PATH = paths.RES_TRAD_PICKLES
 
 # Load data
 # ------------------------------------

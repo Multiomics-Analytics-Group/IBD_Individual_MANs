@@ -3,6 +3,7 @@ import numpy as np
 import copy
 import multiprocessing
 import pickle
+import sys
 from pathlib import Path
 from scipy.stats import gmean
 from sklearn.model_selection import StratifiedKFold, GridSearchCV, train_test_split
@@ -16,11 +17,16 @@ from sklearn.metrics import (
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-PROJECT_ROOT = Path.cwd()
-PROCESSED_DATA_PATH = PROJECT_ROOT / "data/processed/IBD_CuratedMetagenomicData"
-RESULTS_PATH = PROJECT_ROOT / "results/machine_learning/gnn_top20_graphnodes"
-TOP_NODES_PATH = PROJECT_ROOT / "results/tables/analyses/attributions/top_20_graphnodes.csv"
-METRICS_PATH = PROJECT_ROOT / "results/tables/analyses/attributions"
+# Locate the project root (works from the terminal and interactively) and load shared paths
+_start = Path(__file__).resolve() if "__file__" in globals() else Path.cwd()
+_root = next(p for p in (_start, *_start.parents) if (p / "code" / "common" / "paths.py").exists())
+sys.path.insert(0, str(_root / "code" / "common"))
+import paths
+
+PROCESSED_DATA_PATH = paths.DATA_ABUNDANCE
+RESULTS_PATH = paths.RES_ABLATION_RF
+TOP_NODES_PATH = paths.RES_INTERP_TABLES / "top_20_graphnodes.csv"
+METRICS_PATH = paths.RES_ABLATION_NETFEAT
 
 FEATURE_CONFIG = {
     "include_abundance": True,           # Master toggle for species abundance features

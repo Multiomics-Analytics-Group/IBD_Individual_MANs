@@ -1,12 +1,16 @@
+# Locate the project root (from any working directory inside the repo) and load shared paths
+.root <- getwd(); while (!file.exists(file.path(.root, "code", "common", "paths.R")) && dirname(.root) != .root) .root <- dirname(.root)
+source(file.path(.root, "code", "common", "paths.R"))
+
 library(tidyverse)
 
 # Load functional annotations from FugassEM paper
 # -----------------------------------------------
-fugassem_functions <- read_tsv("data/external/HMP2_fugassem_GO.func_assignment.tsv")
+fugassem_functions <- read_tsv(file.path(DATA_EXTERNAL, "HMP2_fugassem_GO.func_assignment.tsv"))
 
 # Load previously generated composite tables for HMP and HallAB cohorts (discovery and validation cohorts, respectively)
 # ------------------------------------------------
-composite_HMP <- read_csv("data/processed/IBD_CuratedMetagenomicData/HMP_counts_filtered_composite.csv")
+composite_HMP <- read_csv(file.path(DATA_ABUNDANCE, "HMP_counts_filtered_composite.csv"))
 
 # Clean species names in fugassem to match composite datasets
 # ---------------------------------------------------------------
@@ -237,7 +241,7 @@ one_hot_sets <- list(
 )
 
 # Save weighted and concatenated embeddings to CSV files
-save_path <- "data/external/functional_attributes"
+save_path <- DATA_FUNCTIONAL_ATTR
 dir.create(save_path, showWarnings = FALSE, recursive = TRUE)
 
 for (dataset_name in names(one_hot_sets)) {

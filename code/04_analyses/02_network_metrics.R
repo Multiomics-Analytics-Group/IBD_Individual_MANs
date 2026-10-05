@@ -1,3 +1,7 @@
+# Locate the project root (from any working directory inside the repo) and load shared paths
+.root <- getwd(); while (!file.exists(file.path(.root, "code", "common", "paths.R")) && dirname(.root) != .root) .root <- dirname(.root)
+source(file.path(.root, "code", "common", "paths.R"))
+
 library(tidyverse)
 library(igraph)
 library(vegan)
@@ -5,7 +9,7 @@ library(patchwork)
 
 # Load previously processed and filtered data
 #-------------------------------------------------------------------------------
-IBD_composite <- readRDS("data/processed/IBD_CuratedMetagenomicData/IBD_studies_counts_filtered_composite.rds")
+IBD_composite <- readRDS(file.path(DATA_ABUNDANCE, "IBD_studies_counts_filtered_composite.rds"))
 
 HMP <- IBD_composite[["HMP_2019_ibdmdb"]]
 
@@ -49,7 +53,7 @@ HMP_metadata_baseline <- HMP_metadata %>%
 # --- CONFIGURATION ---
 
 # Define the project root based on assumed structure
-PROCESSED_DATA_PATH <- file.path("data", "processed", "pyg_datasets")
+PROCESSED_DATA_PATH <- DATA_PYG
 
 DATASETS <- c("HMP")
 
@@ -779,7 +783,7 @@ jaccard_plot <- full_jaccard_df %>%
 
 # --- SAVE PLOTS TO FILES --- #
 
-out_dir <- "results/plots/analyses/network_metrics"
+out_dir <- FIG_NETWORK_METRICS
 if (!dir.exists(out_dir)) dir.create(out_dir, recursive = TRUE)
 
 ggsave(filename = file.path(out_dir, "graph_metrics_boxplots.pdf"), plot = p1_metrics, width = 20, height = 4, dpi = 300)

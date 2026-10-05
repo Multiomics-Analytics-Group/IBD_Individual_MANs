@@ -1,3 +1,7 @@
+# Locate the project root (from any working directory inside the repo) and load shared paths
+.root <- getwd(); while (!file.exists(file.path(.root, "code", "common", "paths.R")) && dirname(.root) != .root) .root <- dirname(.root)
+source(file.path(.root, "code", "common", "paths.R"))
+
 library(tidyverse)
 
 # Download IBD datasets from CuratedMetagenomicData
@@ -92,10 +96,10 @@ names(IBD_metadata) <- sapply(IBD_metadata, function(x) unique(x$dataset))
 names(IBD_metadata_baseline) <- sapply(IBD_metadata_baseline, function(x) unique(x$dataset))
 
 # Save raw files
-save_path <- "data/raw/IBD_CuratedMetagenomicData/"
+save_path <- DATA_RAW
 dir.create(save_path, recursive = TRUE, showWarnings = FALSE)
 
-saveRDS(IBD_CMD_counts, paste0(save_path, "IBD_studies_counts_raw.rds"))
-saveRDS(IBD_CMD_counts_baseline, paste0(save_path, "IBD_studies_counts_raw_baseline.rds"))
-saveRDS(IBD_metadata, paste0(save_path, "IBD_studies_metadata.rds"))
-saveRDS(IBD_metadata_baseline, paste0(save_path, "IBD_studies_metadata_baseline.rds"))
+saveRDS(IBD_CMD_counts, file.path(save_path, "IBD_studies_counts_raw.rds"))
+saveRDS(IBD_CMD_counts_baseline, file.path(save_path, "IBD_studies_counts_raw_baseline.rds"))
+saveRDS(IBD_metadata, file.path(save_path, "IBD_studies_metadata.rds"))
+saveRDS(IBD_metadata_baseline, file.path(save_path, "IBD_studies_metadata_baseline.rds"))
