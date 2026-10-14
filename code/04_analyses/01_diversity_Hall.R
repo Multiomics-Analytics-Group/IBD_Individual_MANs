@@ -4,6 +4,7 @@ source(file.path(.root, "code", "common", "paths.R"))
 
 library(tidyverse)
 library(vegan)
+library(ggpattern)
 
 # Load previously processed and filtered data
 #-------------------------------------------------------------------------------
@@ -329,26 +330,32 @@ samples_per_subject_plot <- ggplot(Hall_samples_per_subject, aes(x = condition, 
     legend.position = "none"
   )
 
-filter_colors <- c(
-  "Non-IBD_Unfiltered" = "#B4CBE2",  # Pale Ice/Cobalt (Desaturated base)
-  "Non-IBD_Filtered"   = "#0F4C81",  # Deep Cobalt Blue
+# filter_colors <- c(
+#   "Non-IBD_Unfiltered" = "#B4CBE2",  # Pale Ice/Cobalt (Desaturated base)
+#   "Non-IBD_Filtered"   = "#0F4C81",  # Deep Cobalt Blue
   
-  "UC_Unfiltered"      = "#FFE9B3",  # Soft Pastel Yellow
-  "UC_Filtered"        = "#FFB703",  # Bright Amber/Yellow
+#   "UC_Unfiltered"      = "#FFE9B3",  # Soft Pastel Yellow
+#   "UC_Filtered"        = "#FFB703",  # Bright Amber/Yellow
   
-  "CD_Unfiltered"      = "#F7A8B4",  # Soft Pastel Red/Pink
-  "CD_Filtered"        = "#D90429"   # Vivid Crimson Red
-)
+#   "CD_Unfiltered"      = "#F7A8B4",  # Soft Pastel Red/Pink
+#   "CD_Filtered"        = "#D90429"   # Vivid Crimson Red
+# )
 
 
 subjects_per_condition_plot <- ggplot(Hall_subject_counts_combined,
-       aes(x = condition, y = num_subjects, fill = color_key,
-           group = interaction(condition, data_type))) +
-  geom_bar(
-    stat = "identity",
-    position = position_dodge2(width = 0.9, padding = 0.12),  # increased padding between groups
+  aes(x = condition, y = num_subjects,
+      pattern = data_type, fill = condition,                       # texture by data type
+      group = interaction(condition, data_type))
+) +
+  geom_col_pattern(
+    position = position_dodge2(width = 0.9, padding = 0.12),
     color = "black",
-    alpha = 0.8
+    pattern_fill = "#fff3f3",     # colour of the stripes/dots
+    pattern_color = "#fff3f3",
+    pattern_density = 0.2,        # thickness of stripes / size of dots
+    pattern_spacing = 0.03,       # distance between stripes/dots
+    pattern_angle = 45,
+    pattern_key_scale_factor = 0.8
   ) +
   geom_text(
     aes(label = num_subjects),
@@ -357,18 +364,18 @@ subjects_per_condition_plot <- ggplot(Hall_subject_counts_combined,
     size = 4.5,
     color = "#494949ff"
   ) +
-  scale_fill_manual(values = filter_colors) +
-  labs(
-    x = "Condition",
-    y = "Number of Subjects"
+  scale_pattern_manual(
+    values = c("none", "stripe")
   ) +
+  scale_fill_manual(values = IBD_colors) +
+  labs(x = "Condition", y = "Number of Subjects", pattern = "Data type") +
   theme_minimal() +
   theme(
     panel.grid.minor = element_blank(),
     panel.border = element_rect(color = "#494949ff", fill = NA, linewidth = 0.5),
     axis.text = element_text(size = 13, color = "#494949ff"),
     axis.title = element_text(size = 14, color = "#494949ff"),
-    legend.position = "none"
+    legend.position = "none"     # turned back on so readers can decode the textures
   )
 
 
