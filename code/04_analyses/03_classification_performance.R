@@ -143,7 +143,7 @@ data_external_auroc <- process_metrics(all_gnn_raw, trad_raw, "external_hall", "
 
 p1 <- plot_stability(data_internal_auprc, "Internal validation: AUPRC", 0.245)
 p2 <- plot_stability(data_internal_auroc, "Internal validation: AUROC", 0.50)
-p3 <- plot_stability(data_external_auprc, "External validation: AUPRC", 0.245)
+p3 <- plot_stability(data_external_auprc, "External validation: AUPRC", 0.28)
 p4 <- plot_stability(data_external_auroc, "External validation: AUROC", 0.50)
 
 print(p1)
