@@ -1,10 +1,10 @@
-# Interpretation of graph-based machine learning models reveals network-level patterns in the gut microbiome of inflammatory bowel diseases
+# Interpreting graph neural networks reveals microbial association patterns in inflammatory bowel diseases
 
 Code for the manuscript of the same title.
 
 We infer one microbial association network per individual from longitudinal gut metagenomes, train graph neural networks on these networks to distinguish IBD from non-IBD individuals, and interpret the models with Integrated Gradients to find the species and associations that carry the signal.
 
-This repository contains code only. Data can be found at [Zenodo repo here].
+This repository contains code only. Data can be found at [doi.org/10.5281/zenodo.23213629](https://doi.org/10.5281/zenodo.23213629)
 
 ## Repository layout
 

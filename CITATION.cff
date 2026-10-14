@@ -1,7 +1,7 @@
 cff-version: 1.2.0
-message: "If you use this code, please cite it as below. The accompanying manuscript has not been published yet."
+message: "If you use this code, please cite it as below."
 type: software
-title: "Interpretation of graph-based machine learning models reveals network-level patterns in the gut microbiome of inflammatory bowel diseases"
+title: "Interpreting graph neural networks reveals microbial association patterns in inflammatory bowel diseases"
 authors:
   - given-names: "André F."
     family-names: "Cunha"
@@ -11,7 +11,7 @@ authors:
     family-names: "Barranco-Altirriba"
   - given-names: "Txell"
     family-names: "Amigó"
-  - given-names: "Juliana"
+  - given-names: "Juliana G."
     family-names: "Assis"
   - given-names: "Helder I."
     family-names: "Nakaya"
