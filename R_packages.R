@@ -18,6 +18,7 @@ cran <- c(
   patchwork  = "1.3.2",
   ggrepel    = "0.9.8",
   ggbeeswarm = "0.7.3",
+  ggpattern  = "1.3.1",
   circlize   = "0.4.18",
   pals       = "1.10",
   scales     = "1.4.0",
