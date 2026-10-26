@@ -2,6 +2,8 @@
 .root <- getwd(); while (!file.exists(file.path(.root, "code", "common", "paths.R")) && dirname(.root) != .root) .root <- dirname(.root)
 source(file.path(.root, "code", "common", "paths.R"))
 
+# GNN interpretation: Figs 4-6 and Suppl. Fig. 4
+
 library(tidyverse)
 library(ggraph)
 library(ggrepel)
@@ -18,7 +20,7 @@ library(patchwork)
 
 # When run with Rscript, send printed plots to a Cairo device: the default pdf device
 # cannot render the fonts of the network plot ("invalid font type").
-if (!interactive()) options(device = function(...) grDevices::cairo_pdf("Rplots.pdf", onefile = TRUE))
+if (!interactive()) options(device = function(...) grDevices::cairo_pdf(file.path(tempdir(), "Rplots.pdf"), onefile = TRUE))
 
 # Load data
 # ------------------------------------------------------------------------------
@@ -109,7 +111,7 @@ meta_cols <- c("graph_name", "logits", "true_label", "convergence_delta")
 
 if (!file.exists(file.path(parent_folder, "all_seeds_attributions_raw.csv"))) {
   seed_dirs <- list.dirs(RES_INTERP_SEEDS, recursive = FALSE, full.names = TRUE)
-  seed_dirs <- seed_dirs[grepl("seed_", basename(seed_dirs))][1:50]
+  seed_dirs <- head(seed_dirs[grepl("seed_", basename(seed_dirs))], 50)
 
   all_seeds_raw <- map_dfr(seed_dirs, function(s_dir) {
     seed_id <- basename(s_dir)
@@ -154,7 +156,9 @@ seed_auprc <- all_seeds_raw %>%
   pr_auc(truth = true_label, prob, event_level = "first") %>%
   rename(auprc = .estimate)
 
-valid_seeds <- seed_auprc %>% filter(auprc >= 0.60) %>% pull(seed)
+MIN_POOLED_AUPRC <- 0.50  # pooled AUPRC (training and held-out MANs) needed to keep a model
+valid_seeds <- seed_auprc %>% filter(auprc >= MIN_POOLED_AUPRC) %>% pull(seed)
+message("Models kept (pooled AUPRC >= ", MIN_POOLED_AUPRC, "): ", length(valid_seeds), " of ", nrow(seed_auprc))
 
 # Taxon name cleaner function
 clean_node_name <- function(x) {
@@ -886,7 +890,7 @@ if (!file.exists(file.path(parent_folder, "all_seeds_edge_attributions_raw.csv")
   cat("Aggregating raw edge attributions across all seeds...\n")
   
   seed_dirs <- list.dirs(RES_INTERP_SEEDS, recursive = FALSE, full.names = TRUE)
-  seed_dirs <- seed_dirs[grepl("seed_", basename(seed_dirs))][1:50]
+  seed_dirs <- head(seed_dirs[grepl("seed_", basename(seed_dirs))], 50)
 
   all_seeds_edges_raw <- map_dfr(seed_dirs, function(s_dir) {
     seed_id <- basename(s_dir)
@@ -946,7 +950,7 @@ if (!file.exists(file.path(parent_folder, "all_seeds_edge_attributions_raw.csv")
 # GRAPH EDGES SUMMARY
 # ------------------------------------------------------------------------------
 
-# Filter edge attributions to valid seeds (auprc >= 0.60)
+# Filter edge attributions to valid seeds (auprc >= MIN_POOLED_AUPRC)
 graph_edge_summary <- all_seeds_edges_raw %>%
   filter(seed %in% valid_seeds) %>%
   select(seed, graph_name, edge_id, source, target, true_label, prob, attr_seed, abs_attr_seed) %>%
@@ -1002,7 +1006,7 @@ edge_prevalence_df <- graph_edge_summary %>%
   arrange(desc(prevalence_weighted_importance))
 
 top_edges_df <- edge_prevalence_df %>%
-  slice_max(prevalence_weighted_importance, n = 150) %>% 
+  slice_max(prevalence_weighted_importance, n = 100) %>%  # top 100 edges
   filter(source %in% node_prevalence_df$node_clean & target %in% node_prevalence_df$node_clean) %>% 
   select(source, target, mean_net, mean_importance, mean_direction_consistency, prevalence_weighted_importance)
 
@@ -1091,23 +1095,12 @@ print(meta_graph_names_p)
 # Define taxonomic levels
 tax_levels <- c("kingdom", "phylum", "class", "order", "family", "genus")
 
-# Extract layout & calculate per-node net edge weight from backbone_graph
-node_net_weights <- backbone_graph %>%
-  activate(nodes) %>%
-  # define module membership based on the sum of metagraph edge weights (avg_net_attr_norm) connected to each node
-  mutate(
-    net_weight = centrality_degree(weights = avg_net_attr_norm, mode = "all"),
-    module = if_else(net_weight >= 0, "M1", "M2")
-  ) %>%
-  as_tibble()
-
 base_layout <- create_layout(backbone_graph, layout = "stress")
 
 # Build long-format node dataframe
 node_taxa_facets <- base_layout %>%
   as_tibble() %>%
   select(x, y, species_name = name, all_of(tax_levels)) %>%
-  left_join(node_net_weights %>% select(name, module), by = c("species_name" = "name")) %>%
   pivot_longer(
     cols = all_of(tax_levels),
     names_to = "tax_level",
@@ -1119,7 +1112,7 @@ node_taxa_facets <- base_layout %>%
     label_fontface = if_else(tax_level %in% c("Kingdom", "Phylum", "Class", "Order"), "plain", "italic")
   )
 
-# 4. Compute Taxonomic Cohesion Metric per Facet & Module (M1 vs M2)
+# 4. Compute Taxonomic Cohesion Metric per Facet (whole metagraph)
 x_min <- min(base_layout$x)
 x_max <- max(base_layout$x)
 y_min <- min(base_layout$y)
@@ -1127,25 +1120,19 @@ y_min <- min(base_layout$y)
 # Shifted a bit more to the right (4% offset instead of 12%)
 x_pos_bottom_right_offset <- x_max - 0.04 * (x_max - x_min)
 
-# Compute cohesion as the proportion of nodes in each module that belong to the most common taxon at that level
+# Compute cohesion as the proportion of metagraph nodes that belong to the most common taxon at that level
 cohesion_metrics <- node_taxa_facets %>%
-  group_by(tax_level, module, taxon_label) %>%
+  group_by(tax_level, taxon_label) %>%
   summarise(n = n(), .groups = "drop_last") %>%
-  mutate(
-    module_size = sum(n),
-    purity = n / module_size
-  ) %>%
+  mutate(purity = n / sum(n)) %>%
   slice_max(purity, n = 1, with_ties = FALSE) %>%
   ungroup() %>%
-  group_by(tax_level) %>%
-  summarise(
+  mutate(
     label_text = paste0(
       "Cohesion index\n",
       "──────────────\n",
-      "M1:  ", sprintf("%5.1f%%", purity[module == "M1"] * 100), "\n",
-      "M2:  ", sprintf("%5.1f%%", purity[module == "M2"] * 100)
-    ),
-    .groups = "drop"
+      sprintf("%5.1f%%", purity * 100), " (", taxon_label, ")"
+    )
   ) %>%
   mutate(
     x = x_pos_bottom_right_offset,
@@ -1183,13 +1170,6 @@ palette_per_facet <- node_taxa_facets %>%
 
 node_taxa_facets <- node_taxa_facets %>%
   left_join(palette_per_facet, by = c("tax_level", "taxon_label"))
-
-# Save node membership table
-node_membership_table <- node_taxa_facets %>%
-  distinct(species_name, module)
-
-dir.create(RES_INTERP_TABLES, recursive = TRUE, showWarnings = FALSE)
-write_csv(node_membership_table, file.path(RES_INTERP_TABLES, "node_module_membership_table.csv"))
 
 # Render Faceted Metagraphs using identity color scale
 taxa_facets_plot <- ggplot() +
@@ -1247,204 +1227,76 @@ print(taxa_facets_plot)
 
 
 
-# FUNCTIONS
-# ----------------------------------------------------
+# Contribution of each attribute type to node importance (Suppl. Fig. 4)
+# ------------------------------------------------------------------------------
+# Per seed, MAN and node: sum of |attributions| within each attribute type.
+# Averaged over valid seeds and normalized by each MAN's maximum node importance
+# (as in the main analysis); the share is each type's part of the node total.
+feature_type <- function(cols) {
+  case_when(
+    cols %in% c("clr", "clr_variance") ~ "Abundance",
+    str_detect(cols, "^GO:")           ~ "Function",
+    TRUE                               ~ "Taxonomy"
+  )
+}
 
-# Extract node names from the backbone graph for filtering functional attributes
-nodes_in_graph <- backbone_graph %>% 
-  activate(nodes) %>% 
-  pull(name)
+type_raw <- map_dfr(file.path(RES_INTERP_SEEDS, valid_seeds), function(s_dir) {
+  files <- list.files(s_dir, pattern = "^integrated_gradients_attributions_.*\\.csv$", full.names = TRUE)
+  map_dfr(files, function(fpath) {
+    df <- read_csv(fpath, show_col_types = FALSE) %>% rename("node" = 1)
+    feat_cols <- setdiff(names(df), c("node", meta_cols))
+    types <- feature_type(feat_cols)
+    m <- abs(as.matrix(df[, feat_cols]))
+    map_dfr(unique(types), function(t) {
+      tibble(node = df$node, type = t, abs_attr = rowSums(m[, types == t, drop = FALSE]))
+    }) %>%
+      mutate(seed = basename(s_dir), graph_name = df$graph_name[1])
+  })
+})
 
-# Load functional attributes (GO Biological Processes) and filter to nodes present in the backbone graph
-function_BP_idf <- read_csv(file.path(DATA_FUNCTIONAL_ATTR, "HMP", "taxa_one_hot_encoded_one_hot_bp_weighted.csv")) %>% 
-  mutate(node_clean = if_else(str_detect(taxa_lineage, "s__"),
-                              str_replace(taxa_lineage, ".*s__", ""),
-                              taxa_lineage),
-         node_clean = str_replace(node_clean, "_", " ")) %>% 
-  select(-taxa_lineage) %>% 
-  relocate(node_clean) %>% 
-  filter(node_clean %in% nodes_in_graph)
-
-# Extract node module assignments from backbone_graph
-node_modules <- backbone_graph %>%
-  activate(nodes) %>%
-  mutate(
-    net_weight = centrality_degree(weights = avg_net_attr_norm, mode = "all"),
-    module = if_else(net_weight >= 0, "M1", "M2")
-  ) %>%
-  as_tibble() %>%
-  select(node_clean = name, module)
-
-# Pivot IDF matrix to long format and merge module assignments
-func_long <- function_BP_idf %>%
-  pivot_longer(
-    cols = -node_clean,
-    names_to = "go_term",
-    values_to = "idf_weight"
-  ) %>%
-  inner_join(node_modules, by = "node_clean") %>%
-  mutate(has_function = if_else(idf_weight > 0, 1, 0)) # binarize presence/absence of function for Fisher's test
-
-
-n_total <- nrow(node_modules)
-
-# Perform Fisher's Exact Test per module against the rest of the graph
-fisher_vs_bg <- func_long %>%
-  group_by(go_term, module) %>%
-  summarise(
-    present_in_mod = sum(has_function),
-    mod_size = n(),
-    .groups = "drop"
-  ) %>%
-  mutate(
-    total_present_net = ave(present_in_mod, go_term, FUN = sum),
-    present_outside = total_present_net - present_in_mod,
-    outside_size = n_total - mod_size
-  ) %>%
-  filter(total_present_net >= 2) %>% 
-  rowwise() %>%
-  mutate(
-    p_val = fisher.test(
-      matrix(c(present_in_mod, mod_size - present_in_mod, 
-               present_outside, outside_size - present_outside), 
-             nrow = 2),
-      alternative = "greater"
-    )$p.value
-  ) %>%
+type_shares <- type_raw %>%
+  group_by(graph_name, node, type) %>%
+  summarise(abs_attr = mean(abs_attr), .groups = "drop") %>%
+  group_by(graph_name, node) %>%
+  mutate(node_total = sum(abs_attr)) %>%
+  group_by(graph_name) %>%
+  mutate(abs_norm = abs_attr / max(node_total)) %>%
   ungroup() %>%
-  group_by(module) %>%
-  mutate(adj_pval = p.adjust(p_val, method = "BH")) %>%
+  mutate(node_clean = clean_node_name(node)) %>%
+  group_by(node_clean, type) %>%
+  summarise(mean_abs_norm = mean(abs_norm), .groups = "drop") %>%
+  group_by(node_clean) %>%
+  mutate(share = mean_abs_norm / sum(mean_abs_norm)) %>%
   ungroup()
 
-# Extract top 20 terms per module (filtered by FDR < 0.05) & retain full GO codes/names
-top_fisher_plot <- fisher_vs_bg %>%
-  filter(adj_pval < 0.05) %>% 
-  group_by(module) %>%
-  slice_min(order_by = adj_pval, n = 20, with_ties = FALSE) %>%
-  ungroup() %>%
-  mutate(
-    neg_log10_p = -log10(adj_pval),
-    dominant_in = if_else(module == "M1", "Over-represented in M1", "Over-represented in M2"),
-    
-    # Format GO terms: Remove "[BP]" tag but KEEP GO ID and full term name (up to 80 chars)
-    go_term_formatted = go_term %>% 
-      str_remove("\\[BP\\]\\s*") %>% 
-      str_trunc(width = 80, side = "right"),
-    
-    # Reorder y-axis factor so M2 negative goes left, M1 positive goes right
-    go_term_formatted = reorder(go_term_formatted, if_else(dominant_in == "Over-represented in M2", -neg_log10_p, neg_log10_p))
-  )
+all_nodes_label <- "All nodes (mean)"
+type_share_plot_df <- bind_rows(
+  type_shares %>% filter(node_clean %in% top_nodes),
+  type_shares %>% group_by(type) %>% summarise(share = mean(share), .groups = "drop") %>%
+    mutate(node_clean = all_nodes_label)
+) %>%
+  mutate(node_clean = factor(node_clean, levels = rev(c(top_nodes, all_nodes_label))),
+         type = factor(type, levels = c("Abundance", "Taxonomy", "Function")))
 
-# Render Diverging Bar Plot (Plot 1)
-fun_p1 <- ggplot(top_fisher_plot, aes(
-  x = if_else(dominant_in == "Over-represented in M2", -neg_log10_p, neg_log10_p), # diverging x-axis for visualization
-  y = go_term_formatted, 
-  fill = dominant_in
-)) +
-  geom_col(width = 0.7, alpha = 0.85) +
-  geom_vline(xintercept = 0, linetype = "dashed", color = "grey40") +
-  geom_vline(xintercept = -log10(0.05), linetype = "dashed", color = "black", linewidth = 0.5) +
-  geom_vline(xintercept = log10(0.05), linetype = "dashed", color = "black", linewidth = 0.5) +
-  scale_fill_manual(
-    values = c("Over-represented in M1" = "#0F4C81", "Over-represented in M2" = "#D90429")
-  ) +
-  labs(
-    x = expression("M2 ←  " * -log[10] * "(FDR Adjusted p-value)" * "  → M1"),
-    y = "Functional attributes (GO Biological Process terms)",
-    fill = NULL
-  ) +
-  scale_x_continuous(limits = c(-3.5, 3.5)) +
-  theme_minimal(base_family = "sans") +
-  theme(
-    panel.grid.minor = element_blank(),
-    panel.grid.major.x = element_blank(),
-    axis.text = element_text(size = 9),
-    legend.position = "bottom",
-    legend.text = element_text(size = 9),
-    axis.ticks = element_line(color = "grey50", linewidth = 0.5),
-    plot.title = element_text(face = "bold", size = 12)
-  )
-  
-print(fun_p1)
+message("Share of node importance per attribute type (top 20 nodes and mean over all nodes):")
+print(type_share_plot_df %>% select(node_clean, type, share) %>%
+        pivot_wider(names_from = type, values_from = share) %>% arrange(desc(node_clean)), n = Inf)
 
+type_colors <- c("Abundance" = "#E9C46A", "Taxonomy" = "#2A9D8F", "Function" = "#6D597A")
 
-# Map Plot 1 OR terms back to species matrix
-top_terms_list <- top_fisher_plot %>% pull(go_term)
+feature_type_p <- ggplot(type_share_plot_df, aes(x = share, y = node_clean, fill = type)) +
+  geom_col(width = 0.75) +
+  geom_text(aes(label = if_else(share >= 0.06, scales::percent(share, accuracy = 1), "")),
+            position = position_stack(vjust = 0.5), size = 3) +
+  scale_fill_manual(values = type_colors, drop = TRUE) +
+  scale_x_continuous(labels = scales::percent, expand = c(0, 0)) +
+  labs(x = "Share of absolute node importance", y = NULL, fill = "Attribute type") +
+  theme_minimal(base_size = 11) +
+  theme(axis.text.y = element_text(face = "italic", color = "black"),
+        panel.grid.major.y = element_blank(),
+        legend.position = "bottom")
 
-species_func_matrix_clean <- func_long %>%
-  filter(
-    go_term %in% top_terms_list,
-    has_function == 1
-  ) %>%
-  mutate(
-    clean_species = node_clean %>% str_replace_all("_", " ") %>% str_squish(),
-    
-    # Format GO labels to include GO ID + Name, allowing long length
-    go_clean = go_term %>% 
-      str_remove("\\[BP\\]\\s*") %>% 
-      str_trunc(width = 85, side = "right")
-  )
-
-# Pivot Matrix (GO Terms as Rows, Species as Columns)
-wide_matrix_transposed <- species_func_matrix_clean %>%
-  select(go_clean, clean_species, idf_weight) %>%
-  pivot_wider(
-    names_from = clean_species,
-    values_from = idf_weight,
-    values_fill = 0
-  ) %>%
-  column_to_rownames("go_clean") %>%
-  as.matrix()
-
-# Align metadata for column splits
-col_metadata <- species_func_matrix_clean %>%
-  distinct(clean_species, module) %>%
-  slice(match(colnames(wide_matrix_transposed), clean_species))
-
-# Setup color scale
-max_val <- max(wide_matrix_transposed, na.rm = TRUE)
-col_fun <- colorRamp2(
-  c(0, max_val / 2, max_val),
-  c("#FFFFFF", "#8E7DBE", "#3B1F52")
-)
-
-# Render Heatmap (Plot 2)
-fun_p2 <- Heatmap(
-  wide_matrix_transposed,
-  name = "IDF Weight",
-  col = col_fun,
-  
-  # Clustering configuration
-  cluster_rows = TRUE,
-  cluster_columns = TRUE,
-  clustering_distance_rows = "euclidean",
-  clustering_distance_columns = "euclidean",
-  clustering_method_rows = "complete",
-  clustering_method_columns = "complete",
-  
-  # Module column splitting
-  column_split = col_metadata$module,
-  column_title_gp = gpar(fontsize = 12, fontface = "bold"),
-  
-  # Typography & formatting
-  show_row_names = TRUE,
-  show_column_names = TRUE,
-  row_names_gp = gpar(fontsize = 9), # Readable font for full GO names
-  column_names_gp = gpar(fontsize = 9.5, fontface = "italic"),
-  column_names_rot = 45,
-  
-  # Panel border & legend
-  border = TRUE,
-  rect_gp = gpar(col = "grey92", lwd = 0.5),
-  heatmap_legend_param = list(
-    title = "IDF weight",
-    title_gp = gpar(fontsize = 9),
-    labels_gp = gpar(fontsize = 8),
-    legend_height = unit(3, "cm")
-  )
-)
-
-draw(fun_p2, padding = unit(c(15, 20, 5, 50), "mm"))
+print(feature_type_p)
 
 
 save_path = FIG_INTERPRETATION
@@ -1469,9 +1321,7 @@ network_pdf_path <- file.path(save_path, "importances_network.pdf")
 ggsave(filename = network_pdf_path, plot = meta_graph_names_p, width = 15, height = 8, units = "in", dpi = 600, device = cairo_pdf)
 network_facets_path <- file.path(save_path, "importances_network_taxonomic_facets.pdf")
 ggsave(filename = network_facets_path, plot = taxa_facets_plot, width = 10, height = 12, units = "in", dpi = 600, device = cairo_pdf)
-function_fisher_path <- file.path(save_path, "importances_functional_fisher.pdf")
-ggsave(filename = function_fisher_path, plot = fun_p1, width = 10, height = 5, units = "in", dpi = 600)
-function_heatmap_path <- file.path(save_path, "importances_functional_heatmap.pdf")
-pdf(file = function_heatmap_path, width = 12, height = 7, useDingbats = FALSE)
-draw(fun_p2, padding = unit(c(15, 20, 5, 50), "mm"))
-dev.off()
+
+# attribute-type contribution barplot
+feature_type_path <- file.path(save_path, "importances_feature_type_shares.pdf")
+ggsave(filename = feature_type_path, plot = feature_type_p, width = 7, height = 7, units = "in", dpi = 600)

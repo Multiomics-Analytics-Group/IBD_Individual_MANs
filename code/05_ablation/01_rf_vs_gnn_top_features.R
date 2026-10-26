@@ -2,6 +2,13 @@
 .root <- getwd(); while (!file.exists(file.path(.root, "code", "common", "paths.R")) && dirname(.root) != .root) .root <- dirname(.root)
 source(file.path(.root, "code", "common", "paths.R"))
 
+# Top Random Forest features vs top GNN nodes (Suppl. Fig. 5)
+MIN_RF_AUPRC     <- 0.50  # held-out AUPRC needed to keep an RF run
+MIN_POOLED_AUPRC <- 0.50  # pooled AUPRC needed to keep a GNN model (as in 04_model_interpretation.R)
+
+# Under Rscript, printed plots go to a temporary file
+if (!interactive()) options(device = function(...) grDevices::pdf(file.path(tempdir(), "Rplots.pdf"), onefile = TRUE))
+
 library(tidyverse)
 library(igraph)
 library(yardstick)
@@ -102,7 +109,7 @@ valid_rf_runs <- read_csv(baseline_results_path) %>%
   filter(val_type == "internal_hmp") %>% 
   select(where(~ !all(is.na(.)))) %>% 
   filter(model %in% c("RF")) %>% 
-  filter(auprc >= 0.6) %>% 
+  filter(auprc >= MIN_RF_AUPRC) %>%
   pull(run)
 
 # make joint baseline metrics plot with graph-based models for comparison
@@ -142,7 +149,7 @@ meta_cols <- c("graph_name", "logits", "true_label", "convergence_delta")
 
 if (!file.exists(file.path(parent_folder, "all_seeds_attributions_raw.csv"))) {
   seed_dirs <- list.dirs(RES_INTERP_SEEDS, recursive = FALSE, full.names = TRUE)
-  seed_dirs <- seed_dirs[grepl("seed_", basename(seed_dirs))][1:50]
+  seed_dirs <- head(seed_dirs[grepl("seed_", basename(seed_dirs))], 50)
 
   all_seeds_raw <- map_dfr(seed_dirs, function(s_dir) {
     seed_id <- basename(s_dir)
@@ -187,7 +194,9 @@ seed_auprc <- all_seeds_raw %>%
   pr_auc(truth = true_label, prob, event_level = "first") %>%
   rename(auprc = .estimate)
 
-valid_seeds <- seed_auprc %>% filter(auprc >= 0.60) %>% pull(seed)
+valid_seeds <- seed_auprc %>% filter(auprc >= MIN_POOLED_AUPRC) %>% pull(seed)
+message("RF runs kept (held-out AUPRC >= ", MIN_RF_AUPRC, "): ", length(valid_rf_runs),
+        " | graph models kept (pooled AUPRC >= ", MIN_POOLED_AUPRC, "): ", length(valid_seeds))
 
 # Taxon name cleaner function
 clean_node_name <- function(x) {

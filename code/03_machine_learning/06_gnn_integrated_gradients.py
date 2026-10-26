@@ -1,3 +1,4 @@
+# Integrated Gradients attributions for one GNN model instance (usage: --seed <seed>)
 import argparse
 import sys
 import torch
@@ -37,7 +38,7 @@ DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 PARAMS = {
     't_str': "0_3",
     'dataset': 'HMP', 
-    'node_features_list': ['x_mean_clr', 'x_clr_variance', 'x_taxonomy_onehot', 'x_func_emb_BP_idf'],
+    'node_features_list': ['x_mean_clr', 'x_clr_variance', 'x_taxonomy_onehot'],  # the functional block (x_func_emb_BP_idf) is not used
     'pred_threshold': 0.5,
     'weight_type': 'assoc_',
     'model_type': 'GraphConv',
@@ -242,7 +243,7 @@ for data in captum_loader:
     var_name = ["clr_variance"]
 
     # Combine all feature names in the order they were concatenated
-    feature_names = clr_name + var_name + taxonomy_names + BP_names
+    feature_names = clr_name + var_name + taxonomy_names
     attributions_df.columns = feature_names
 
     # Adding graph name as a column
