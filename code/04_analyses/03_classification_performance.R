@@ -27,13 +27,14 @@ format_gnn_metrics <- function(df, column_pattern) {
       node_features_list == "['x_taxonomy_onehot']" ~ "Taxonomy",
       node_features_list == "['x_mean_clr', 'x_clr_variance']" ~ "CLR (Mean+Var)",
       node_features_list == "['x_dummy']" ~ "Dummy",
-      node_features_list == "['x_func_emb_BP_idf']" ~ "BP IDF",
+      # node_features_list == "['x_func_emb_BP_idf']" ~ "BP IDF",
       node_features_list == "['x_mean_clr', 'x_clr_variance', 'x_taxonomy_onehot']" ~ "CLR + Tax",
-      node_features_list == "['x_mean_clr', 'x_clr_variance', 'x_func_emb_BP_idf']" ~ "CLR + BP IDF",
-      node_features_list == "['x_taxonomy_onehot', 'x_func_emb_BP_idf']" ~ "Tax + BP IDF",
-      node_features_list == "['x_mean_clr', 'x_clr_variance', 'x_taxonomy_onehot', 'x_func_emb_BP_idf']" ~ "CLR + Tax + BP IDF",
+      # node_features_list == "['x_mean_clr', 'x_clr_variance', 'x_func_emb_BP_idf']" ~ "CLR + BP IDF",
+      # node_features_list == "['x_taxonomy_onehot', 'x_func_emb_BP_idf']" ~ "Tax + BP IDF",
+      # node_features_list == "['x_mean_clr', 'x_clr_variance', 'x_taxonomy_onehot', 'x_func_emb_BP_idf']" ~ "CLR + Tax + BP IDF",
       TRUE ~ node_features_list
-    ))
+    )) %>% 
+    filter(node_features_list %in% c("Taxonomy", "CLR (Mean+Var)", "CLR + Tax", "Dummy"))
 }
 
 # Metadata fill to bridge internal/external rows
@@ -131,7 +132,7 @@ plot_stability <- function(df, title, threshold_line) {
     theme_minimal() +
     theme(panel.grid.minor = element_blank(), panel.grid.major.y = element_blank(),
           panel.border = element_rect(color = "#494949ff", fill = NA, linewidth = 0.4),
-          axis.text = element_text(size = 9), strip.text = element_text(size = 10.3, face = "bold"), 
+          axis.text = element_text(size = 9), strip.text = element_text(size = 13), 
           legend.position = "bottom") +
     labs(title = title, x = "Mean score", y = NULL, color = "Edge threshold")
 }
@@ -158,8 +159,8 @@ if (!dir.exists(save_path)) {
   dir.create(save_path, recursive = TRUE)
 }
 
-ggsave(filename = file.path(save_path, "internal_auprc_comparison.pdf"), plot = p1, width = 6, height = 5, dpi = 300)
-ggsave(filename = file.path(save_path, "internal_auroc_comparison.pdf"), plot = p2, width = 6, height = 5, dpi = 300)
-ggsave(filename = file.path(save_path, "external_auprc_comparison.pdf"), plot = p3, width = 6, height = 5, dpi = 300)
-ggsave(filename = file.path(save_path, "external_auroc_comparison.pdf"), plot = p4, width = 6, height = 5, dpi = 300)
+ggsave(filename = file.path(save_path, "internal_auprc_comparison.pdf"), plot = p1, width = 6, height = 4.5, dpi = 300)
+ggsave(filename = file.path(save_path, "internal_auroc_comparison.pdf"), plot = p2, width = 6, height = 4.5, dpi = 300)
+ggsave(filename = file.path(save_path, "external_auprc_comparison.pdf"), plot = p3, width = 6, height = 4.5, dpi = 300)
+ggsave(filename = file.path(save_path, "external_auroc_comparison.pdf"), plot = p4, width = 6, height = 4.5, dpi = 300)
 
