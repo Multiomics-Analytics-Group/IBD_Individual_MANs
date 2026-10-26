@@ -16,7 +16,7 @@ Scripts are numbered in the order they are run.
 | [`code/02_networks`](code/02_networks) | Infer per-individual SparCC networks (with linear detrending) and export them |
 | [`code/03_machine_learning`](code/03_machine_learning) | Build node attributes and PyTorch Geometric datasets, train the traditional and graph-based models, run Integrated Gradients |
 | [`code/04_analyses`](code/04_analyses) | Diversity, network metrics, classification performance and model interpretation figures |
-| [`code/05_ablation`](code/05_ablation) | Random Forest comparison, module ablation experiments, module and *E. coli* neighborhood analyses |
+| [`code/05_ablation`](code/05_ablation) | Random Forest comparison, metagraph ablation experiments (with and without edges) and SparCC associations among the metagraph Bacteroidales |
 | [`code/common`](code/common) | Shared functions, model definitions and paths |
 
 All input and output locations are defined in [`code/common/paths.R`](code/common/paths.R) and [`code/common/paths.py`](code/common/paths.py).

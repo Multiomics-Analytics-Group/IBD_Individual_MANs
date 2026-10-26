@@ -1,3 +1,5 @@
+# Metagraph ablation with and without edges (Fig. 7, Suppl. Table 4); in the code, m1 = M only
+import argparse
 import copy
 from collections import defaultdict
 import numpy as np
@@ -34,10 +36,16 @@ from model_definitions import (
 
 # --- EXPERIMENT CONFIGURATION & PATHS ---
 # Path to module membership table
-TABLE_PATH = paths.RES_INTERP_TABLES / "node_module_membership_table.csv"
+_parser = argparse.ArgumentParser()
+_parser.add_argument("--smoke", action="store_true", help="1 repeat, 3 epochs; outputs in smoke/")
+ARGS, _ = _parser.parse_known_args()
+
+TABLE_PATH = paths.RES_ABLATION / "metagraph_species.csv"
+OUTPUT_DIR = paths.RES_ABLATION_GNN / "smoke" if ARGS.smoke else paths.RES_ABLATION_GNN
+MODELS_DIR = OUTPUT_DIR / "models"
 
 EXPERIMENTAL_CONFIG = {
-    "num_repeats": 30,
+    "num_repeats": 50,
     "validation_fraction": 0.2,
     "dropout_rate": 0.3,
     "num_epochs": 500,
@@ -46,12 +54,14 @@ EXPERIMENTAL_CONFIG = {
     "batch_size": 8,
     "reproducible_seed": 500,
 }
+if ARGS.smoke:  # quick end-to-end check
+    EXPERIMENTAL_CONFIG.update({"num_repeats": 1, "num_epochs": 3})
 
 MODEL_PARAMS = {
     't_str': "0_3",
     'training_dataset': 'HMP',
     'validation_dataset': 'Hall',
-    'node_features_list': ['x_mean_clr', 'x_clr_variance', 'x_taxonomy_onehot', 'x_func_emb_BP_idf'],
+    'node_features_list': ['x_mean_clr', 'x_clr_variance', 'x_taxonomy_onehot'],  # the functional block (x_func_emb_BP_idf) is not used
     'pred_threshold': 0.5,
     'weight_type': 'assoc_',
     'model_type': 'GraphConv',
@@ -72,14 +82,9 @@ def clean_node_name(name_str):
     return cleaned
 
 
-def load_module_species(table_path):
-    """Loads species dynamically from the provided module membership CSV table."""
-    df = pd.read_csv(table_path)
-    
-    m1_species = df[df['module'] == 'M1']['species_name'].dropna().tolist()
-    m2_species = df[df['module'] == 'M2']['species_name'].dropna().tolist()
-    
-    return m1_species, m2_species
+def load_metagraph_species(table_path):
+    """Loads the metagraph species from results/ablation/metagraph_species.csv."""
+    return pd.read_csv(table_path)['species_name'].dropna().tolist()
 
 
 def filter_pyg_dataset(dataset, target_nodes=None, exclude_nodes=None):
@@ -177,6 +182,28 @@ def filter_pyg_dataset(dataset, target_nodes=None, exclude_nodes=None):
     return filtered_dataset
 
 
+def remove_edges(dataset):
+    """Same graphs, nodes and node attributes, with every edge removed."""
+    out = []
+    for data in dataset:
+        nd = data.clone()
+        num_edges = data.edge_index.size(1)
+        # 'weight' is the only edge-level attribute of these graphs. It is emptied explicitly:
+        # a size-based check cannot tell edge- from node-level attributes when a graph has as
+        # many nodes as edges (e.g. 2 species connected by one undirected edge).
+        nd.weight = data.weight[:0]
+        for key in data.keys():
+            value = data[key]
+            if (key not in ("edge_index", "weight") and torch.is_tensor(value) and value.ndim > 0
+                    and value.size(0) == num_edges and value.size(0) != data.num_nodes):
+                raise ValueError(f"Unexpected edge-level attribute '{key}' in graph {data.name}")
+        nd.edge_index = data.edge_index[:, :0]
+        assert nd.weight.numel() == 0 and nd.edge_index.size(1) == 0
+        out.append(nd)
+    print(f"Removed edges: {len(dataset)} -> {len(out)} graphs, max edges left {max(d.edge_index.size(1) for d in out)}")
+    return out
+
+
 # --- MAIN EXPERIMENT PIPELINE ---
 def main():
     set_seed(EXPERIMENTAL_CONFIG["reproducible_seed"])
@@ -184,21 +211,17 @@ def main():
     print(f"Executing on device: {DEVICE}")
 
     # Load dynamic module species from table
-    m1_species, m2_species = load_module_species(TABLE_PATH)
-    m1_plus_m2_species = list(set(m1_species + m2_species))
+    m1_species = load_metagraph_species(TABLE_PATH)
+    print(f"Metagraph species: {len(m1_species)}")
 
     # Define target species subsets (positive inclusion filters)
     target_sets = {
         "m1": m1_species,
-        "m2": m2_species,
-        "m1_plus_m2": m1_plus_m2_species,
     }
 
     # Define exclusion lists built off whole dataset
     exclusions = {
         "whole_minus_m1": m1_species,
-        "whole_minus_m2": m2_species,
-        "whole_minus_m1_plus_m2": m1_plus_m2_species,
     }
 
     # 1. LOAD BASELINE WHOLE DATASETS
@@ -232,6 +255,14 @@ def main():
         print(f"Processing Exclusion Set: '{name}'")
         datasets_train_suite[name] = filter_pyg_dataset(raw_train_dataset, exclude_nodes=excl_list)
         datasets_hall_suite[name] = filter_pyg_dataset(raw_hall_dataset, exclude_nodes=excl_list)
+
+    # Edge-free version of every node set
+    for name in list(datasets_train_suite.keys()):
+        print(f"Processing Edge-free Set: '{name}_noedges'")
+        datasets_train_suite[f"{name}_noedges"] = remove_edges(datasets_train_suite[name])
+        datasets_hall_suite[f"{name}_noedges"] = remove_edges(datasets_hall_suite[name])
+    for name, ds in datasets_train_suite.items():  # split indices must stay aligned
+        assert len(ds) == len(raw_train_dataset), f"training variant '{name}' dropped graphs"
 
     training_configs = list(datasets_train_suite.keys())
     evaluation_sets = list(datasets_train_suite.keys())
@@ -295,7 +326,13 @@ def main():
                     num_classes=1, pooling_method=MODEL_PARAMS['pooling_method'],
                     sagpool_ratio=0.5, difpool_clusters_ratio=0.7, aggr_strategy=MODEL_PARAMS['dual_stream_aggregation']
                 ).to(DEVICE)
-                model.fit_global_scaling(train_loader)
+                if train_config.endswith("_noedges"):  # fit on the same split WITH edges
+                    scaling_source = train_config.removesuffix("_noedges")
+                    model.fit_global_scaling(PyGDataLoader(
+                        Subset(datasets_train_suite[scaling_source], train_indices),
+                        batch_size=EXPERIMENTAL_CONFIG["batch_size"], shuffle=False))
+                else:
+                    model.fit_global_scaling(train_loader)
 
             criterion = torch.nn.BCEWithLogitsLoss(pos_weight=torch.tensor(3.0).to(DEVICE)).to(DEVICE)
             optimizer = torch.optim.Adam(model.parameters(), lr=EXPERIMENTAL_CONFIG["learning_rate"])
@@ -309,6 +346,26 @@ def main():
                 use_edge_weights=MODEL_PARAMS['use_edge_weights'], y_key="y_binary", plot_losses=False,
                 repeat_idx=repeat_idx + 1
             )
+
+            # Save the trained model with everything needed to reload and re-evaluate it
+            MODELS_DIR.mkdir(parents=True, exist_ok=True)
+            torch.save({
+                "state_dict": trained_model.state_dict(),
+                "model_kwargs": dict(
+                    model_type=MODEL_PARAMS['model_type'], num_layers=MODEL_PARAMS['num_layers'],
+                    input_dim=input_dim, hidden_dim=128, embedding_dim=128, dropout=EXPERIMENTAL_CONFIG["dropout_rate"],
+                    num_classes=1, pooling_method=MODEL_PARAMS['pooling_method'],
+                    sagpool_ratio=0.5, difpool_clusters_ratio=0.7, aggr_strategy=MODEL_PARAMS['dual_stream_aggregation']),
+                "train_config": train_config,
+                "repeat_idx": repeat_idx + 1,
+                "split_seed": EXPERIMENTAL_CONFIG["reproducible_seed"] + repeat_idx,
+                "train_indices": [int(i) for i in train_indices],
+                "val_indices": [int(i) for i in val_indices],
+                "node_features_list": MODEL_PARAMS['node_features_list'],
+                "m1_species": m1_species,
+                "experimental_config": EXPERIMENTAL_CONFIG,
+                "model_params": MODEL_PARAMS,
+            }, MODELS_DIR / f"repeat_{repeat_idx + 1:02d}_{train_config}.pt")
 
             # 4. CROSS-EVALUATION ACROSS ALL EVALUATION SETS
             print(f"--- Evaluating [{train_config.upper()}] model across ALL evaluation sets ---")
@@ -392,6 +449,10 @@ def main():
                 }
                 raw_runs_list.append(raw_row)
 
+        # Keep finished work if the run stops early
+        OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+        pd.DataFrame(raw_runs_list).to_csv(OUTPUT_DIR / "partial_raw_metrics.csv", index=False)
+
     # 5. AGGREGATE RESULTS & COMPILE COMPREHENSIVE TABLES
     summary_rows = []
     metric_keys = ["auc", "auprc", "f1", "loss", "acc"]
@@ -416,11 +477,11 @@ def main():
     final_predictions_df = pd.concat(all_individual_preds_df, ignore_index=True)
 
     # Save outputs locally with updated filenames
-    output_path = paths.RES_ABLATION_GNN / "cross_evaluation_performance_summary_modules.csv"
-    raw_output_path = paths.RES_ABLATION_GNN / "cross_evaluation_raw_metrics_per_run_modules.csv"
-    preds_output_path = paths.RES_ABLATION_GNN / "cross_evaluation_predictions_modules.csv"
+    output_path = OUTPUT_DIR / "cross_evaluation_performance_summary_modules.csv"
+    raw_output_path = OUTPUT_DIR / "cross_evaluation_raw_metrics_per_run_modules.csv"
+    preds_output_path = OUTPUT_DIR / "cross_evaluation_predictions_modules.csv"
 
-    paths.RES_ABLATION_GNN.mkdir(parents=True, exist_ok=True)
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     results_df.to_csv(output_path, index=False)
     raw_results_df.to_csv(raw_output_path, index=False)
     final_predictions_df.to_csv(preds_output_path, index=False)

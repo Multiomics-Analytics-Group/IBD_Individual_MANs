@@ -27,10 +27,11 @@ RES_GNN_TABLES = PROJECT_ROOT / "results" / "models" / "gnn" / "tables"         
 # --- Results: interpretation (integrated gradients) ----------------------------
 RES_INTERP_SEEDS = PROJECT_ROOT / "results" / "interpretation" / "per_seed"  # seed_*/ folders of integrated-gradients attributions
 RES_INTERP_AGG = PROJECT_ROOT / "results" / "interpretation"                 # all_seeds_*.csv aggregated over seeds
-RES_INTERP_TABLES = PROJECT_ROOT / "results" / "interpretation" / "tables"   # module membership table
 
 # --- Results: ablation ---------------------------------------------------------
-RES_ABLATION_GNN = PROJECT_ROOT / "results" / "ablation" / "gnn"                   # cross_evaluation_*_modules.csv (GNN module ablation)
+RES_ABLATION = PROJECT_ROOT / "results" / "ablation"                                              # metagraph_species.csv
+RES_ABLATION_GNN = PROJECT_ROOT / "results" / "ablation" / "gnn"                                    # cross_evaluation_*_modules.csv, tables and saved models
+RES_BACTEROIDALES = PROJECT_ROOT / "results" / "ablation" / "bacteroidales_associations"            # SparCC weights among metagraph Bacteroidales
 
 # --- Figures (one folder per producing script) ---------------------------------
 FIG_DIVERSITY = PROJECT_ROOT / "results" / "figures" / "diversity"
@@ -38,5 +39,5 @@ FIG_NETWORK_METRICS = PROJECT_ROOT / "results" / "figures" / "network_metrics"
 FIG_CLASSIFICATION = PROJECT_ROOT / "results" / "figures" / "classification"
 FIG_INTERPRETATION = PROJECT_ROOT / "results" / "figures" / "interpretation"
 FIG_RF_FEATURES = PROJECT_ROOT / "results" / "figures" / "rf_features"
-FIG_MODULES = PROJECT_ROOT / "results" / "figures" / "modules"
-FIG_ECOLI = PROJECT_ROOT / "results" / "figures" / "ecoli"
+FIG_ABLATION = PROJECT_ROOT / "results" / "figures" / "ablation"
+FIG_BACTEROIDALES = PROJECT_ROOT / "results" / "figures" / "bacteroidales_associations"

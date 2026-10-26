@@ -28,10 +28,11 @@ RES_GNN_TABLES       <- file.path(PROJECT_ROOT, "results", "models", "gnn", "tab
 # --- Results: interpretation (integrated gradients) ----------------------------
 RES_INTERP_SEEDS     <- file.path(PROJECT_ROOT, "results", "interpretation", "per_seed")  # seed_*/ folders of integrated-gradients attributions
 RES_INTERP_AGG       <- file.path(PROJECT_ROOT, "results", "interpretation")              # all_seeds_*.csv aggregated over seeds
-RES_INTERP_TABLES    <- file.path(PROJECT_ROOT, "results", "interpretation", "tables")    # module membership table
 
 # --- Results: ablation ---------------------------------------------------------
-RES_ABLATION_GNN     <- file.path(PROJECT_ROOT, "results", "ablation", "gnn")               # cross_evaluation_*_modules.csv (GNN module ablation)
+RES_ABLATION         <- file.path(PROJECT_ROOT, "results", "ablation")                                       # metagraph_species.csv
+RES_ABLATION_GNN     <- file.path(PROJECT_ROOT, "results", "ablation", "gnn")                                # cross_evaluation_*_modules.csv, tables and saved models
+RES_BACTEROIDALES    <- file.path(PROJECT_ROOT, "results", "ablation", "bacteroidales_associations")         # SparCC weights among metagraph Bacteroidales
 
 # --- Figures (one folder per producing script) ---------------------------------
 FIG_DIVERSITY        <- file.path(PROJECT_ROOT, "results", "figures", "diversity")
@@ -39,5 +40,5 @@ FIG_NETWORK_METRICS  <- file.path(PROJECT_ROOT, "results", "figures", "network_m
 FIG_CLASSIFICATION   <- file.path(PROJECT_ROOT, "results", "figures", "classification")
 FIG_INTERPRETATION   <- file.path(PROJECT_ROOT, "results", "figures", "interpretation")
 FIG_RF_FEATURES      <- file.path(PROJECT_ROOT, "results", "figures", "rf_features")
-FIG_MODULES          <- file.path(PROJECT_ROOT, "results", "figures", "modules")
-FIG_ECOLI            <- file.path(PROJECT_ROOT, "results", "figures", "ecoli")
+FIG_ABLATION         <- file.path(PROJECT_ROOT, "results", "figures", "ablation")
+FIG_BACTEROIDALES    <- file.path(PROJECT_ROOT, "results", "figures", "bacteroidales_associations")
